@@ -36,13 +36,15 @@
           <section class="piano" :style="{'width':pianoWidth+'px'}">
       <!--canvas钢琴卷帘-->
             <PianoRoll v-if="asideLoaded" class="canvas-piano" :style="{width:'100%'}"></PianoRoll>
+            <!-- 子路由内容 -->
+            <!-- <router-view v-if="asideLoaded" class="sub-content"></router-view> -->
           </section>
         <footer class="function">
           <div class="function-action">
             <h3 class="function-play">播放</h3>
             <h3 class="function-pause">暂停</h3>
             <h3 class="function-speed">速度</h3>
-            <BpmSlider style="display: inline-block;">22</BpmSlider style=>
+            <BpmSlider style="display: inline-block;">22</BpmSlider >
           </div>
           <div class="function-react">
             <button id="function-save">
@@ -78,12 +80,12 @@
             <!-- {{ materialUnfoldCache.isAnyUnfolded ? '有展开项' : '全部折叠' }} -->
           </div>
         </div>
-        
+
         <!-- 乐器
         从乐器库获取乐器列表
         乐器列表中包含乐器名称、乐器类型、乐器音色
         乐器类型包含钢琴、吉他、贝斯、鼓、弦乐、管乐、打击乐 -->
-         
+
         <div class="material-container">
          <div class="material-main" v-for="item in materialTriggers" :key="item.id">
            <h3 class="material-item"  @dblclick="handleSwitchUnfold(item.id)">
@@ -92,7 +94,7 @@
            </h3>
            <Transition><!--素材库下拉菜单-->
              <ul v-if="isMaterialUnfold.includes(item.id as never)">
-               <li v-for="lilitem in item.content" :key="item.id" class="material-list" draggable="true" @dblclick="StartPlay">
+               <li v-for="lilitem in item.content" :key="lilitem" class="material-list" draggable="true" @dblclick="StartPlay">
                 <i class="material-list-icon"></i>
                 <span class="material-item-title">
                  {{lilitem}}
@@ -116,7 +118,7 @@
 
             <option value="dottedeighthnote">小附点 1/8+1/8+1/16</option>
             <option value="dottedquarternote">大附点 1/4+1/4+1/8</option>
-          
+
           <option value="syncopationLarge">大切分 1/8+1/4+1/8</option>
           <option value="syncopationSmall">小切分 1/16+1/8+1/16</option>
 
@@ -124,7 +126,7 @@
 
           <option value="frontEighthBackSixteenth">前八后十六 1/8+1/16+1/16</option>
           <option value="frontSixteenthBackEighth">前十六后八 1/16+1/16+1/8</option>
-            
+
           </select>
         </footer>
       </section>
@@ -139,7 +141,7 @@ import PianoRoll from '../src/components/PianoRoll.vue';
 import Aside from '../src/components/Aside.vue'
 import BpmSlider from '@/components/BpmSlider.vue';
 import { ref, watch, onMounted, onUnmounted, computed} from 'vue'
-import  { playAll,StartPlay } from '@/data/musicMaterials';
+import  { StartPlay } from '@/data/musicMaterials';
 
 
 const asideLoaded=ref(false)
@@ -162,14 +164,14 @@ let materialItem=document.querySelectorAll('.material-list')
     //放下元素位置的事件监听
     pianoCanvas?.addEventListener('dragover',(e)=>{
       e.preventDefault()
-    
+
     })
     pianoCanvas.addEventListener('drop',(e)=>{
       e.preventDefault()
     })
     calculatePianoWidth(); // 初加载计算钢琴边框
-    const lastOuterWidth=window.outerWidth
-    const lastOuterHeight=window.outerHeight
+    // const lastOuterWidth=window.outerWidth
+    // const lastOuterHeight=window.outerHeight
     window.addEventListener('resize',calculatePianoWidth);
     // 添加侧边栏展开/收起的点击事件监听
     // const setupAsideButtonListener = () => {
@@ -189,7 +191,6 @@ let materialItem=document.querySelectorAll('.material-list')
       const computedStyle = getComputedStyle(asideElement);
       const marginLeft = computedStyle.marginLeft;
 
-      console.log('当前 margin-left:', marginLeft);
 
       // 根据 margin-left 的变化重新计算钢琴卷帘宽度
       calculatePianoWidth();
@@ -232,7 +233,6 @@ function handleSwitchUnfold(materialId:number){
   }else{
     isMaterialUnfold.value.push(materialId as never)
   }
-  console.log(isMaterialUnfold.value);
 }
 //素材库数组
 const materialTriggers=ref([

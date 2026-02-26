@@ -6,37 +6,6 @@ import { onMounted } from 'vue'
 const app=createApp(App)
 app.use(router)
 app.mount('#app')
-// const MAX = 2.5;
-// const MIN=0.8
-// // 统一拿当前缩放
-// onMounted(()=>{
-//   document.body.style.transformOrigin='(0,0)'
-//     document.body.style.transform ='scale(1.8)'
-// })
-// const getZoom = () => window.devicePixelRatio * (window.outerWidth / window.innerWidth);
-
-// window.addEventListener('wheel', e => {
-
-//   if (e.ctrlKey && getZoom() >= MAX && e.deltaY < 0) {
-//     e.preventDefault();   // 禁止继续放大
-//   }
-//   if (e.ctrlKey && getZoom() <= MIN && e.deltaY > 0){
-//     e.preventDefault();   // 禁止继续缩小
-//   }
-// }, { passive:false });
-
-// window.addEventListener('keydown', e => {
-//   if ((e.ctrlKey || e.metaKey) &&
-//       (e.key==='+' || e.key==='=' || e.key==='Add') &&
-//       getZoom() >= MAX) {
-//     e.preventDefault();
-//   }
-//   if ((e.ctrlKey || e.metaKey) &&
-//       (e.key==='-' || e.key==='=' || e.key==='Subtract') &&
-//       getZoom() <= MIN) {
-//     e.preventDefault();
-//   }
-// });
 window.addEventListener(
   'wheel',
   (e: WheelEvent) => {

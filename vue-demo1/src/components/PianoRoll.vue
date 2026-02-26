@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="piano-layout">
     </div>
   </template>
@@ -106,7 +106,7 @@ class Track{
     this.ev
       .rect(0, 70 + (this.id - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
       .fill({ color:0x4a5c6a }) // Fill with red
-      .stroke({ width: 1, color: 0x5a6c7a }); 
+      .stroke({ width: 1, color: 0x5a6c7a });
   }
   addClip=()=>{
     console.log('track');
@@ -313,7 +313,7 @@ class Clip {
 
   clipId: number
   //0.1s=3px
-  
+
   startTick:number//开始时间 以像素表示 1px=1/30s
   durationTick:number//时长
   instrumentId: InstrumentId
@@ -323,6 +323,7 @@ class Clip {
   container: Container
   ev: Graphics
   label: BitmapText
+  deleteButton: Graphics
   content:string
 
 
@@ -348,6 +349,7 @@ class Clip {
     this.container = new Container()
     this.ev = new Graphics()
     this.content=text
+    this.deleteButton = new Graphics()
     this.label = new BitmapText({
       text,
       style: {
@@ -360,7 +362,8 @@ class Clip {
     this.label.x = 30
     this.label.y = 0
 
-    this.container.addChild(this.ev, this.label)
+    this.setupDeleteButton()
+    this.container.addChild(this.ev, this.label, this.deleteButton)
     this.container.x = x
     this.container.y = y
     this.startTick=x
@@ -386,11 +389,53 @@ class Clip {
       this.itemHeight
       )
       console.log(this);
-      
+
     }
     bindEvents() {
       this.container.on('pointerdown', this.onPointerDown)
       this.container.on('pointermove', this.onPointerMove)
+      this.container.on('pointerover', this.onPointerOver)
+      this.container.on('pointerout', this.onPointerOut)
+    }
+    setupDeleteButton = () => {
+      this.deleteButton.clear()
+      this.deleteButton
+        .circle(110, 5, 8)
+        .fill(0xcccc)
+      this.deleteButton
+        .moveTo(107, 2)
+        .lineTo(113, 8)
+        .moveTo(113, 2)
+        .lineTo(107, 8)
+        .stroke({ width: 1.5, color: 0xffffff })
+      this.deleteButton.visible = false
+      this.deleteButton.eventMode = 'static'
+      this.deleteButton.cursor = 'pointer'
+      this.deleteButton.on('pointerdown', (e: any) => {
+        e.stopPropagation()
+      })
+      this.deleteButton.on('pointertap', (e: any) => {
+        e.stopPropagation()
+        this.delete()
+      })
+    }
+    delete = () => {
+      trackMap.forEach((track, trackId) => {
+        const index = track.clips.indexOf(this)
+        if (index !== -1) {
+          track.clips.splice(index, 1)
+        }
+        if (!track.clips.length) {
+          trackMap.delete(trackId)
+        }
+      })
+      this.container.parent?.removeChild(this.container)
+    }
+    onPointerOver = () => {
+      this.deleteButton.visible = true
+    }
+    onPointerOut = () => {
+      this.deleteButton.visible = false
     }
     changeLocation=()=>{}
     onPointerMove=(e:any)=>{
@@ -403,11 +448,11 @@ class Clip {
 }
     onPointerDown = (e: any) => {
       e.stopPropagation()
-    
+
       const local = e.getLocalPosition(this.container)
       this.startX = e.global.x
       this.startWidth = this.itemWidth
-    
+
       if (local.x < 6) {
         this.resizeDir = 'left'
       } else if (local.x > this.itemWidth - 6) {
@@ -419,7 +464,7 @@ class Clip {
     }
 
   }
-  
+
 
   //！响应式canvas
   const pianoCanvas = ref<HTMLCanvasElement | null>(null);
@@ -435,7 +480,7 @@ class Clip {
         }
       })
   onMounted(
-    
+
     async () => {
       //挂载pixi-canvas
       const pixiApp = new Application()
@@ -473,7 +518,7 @@ class Clip {
       parentHeight = 1600;
     }
 
-   
+
     //开始绘画
     if( pianoCanvas.value) {
       const musicTrackLine = new Graphics();
@@ -488,9 +533,9 @@ class Clip {
           graphics
           .rect(0, 70 + (i - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
           .fill({ color:0x4a5c6a }) // Fill with red
-          .stroke({ width: 1, color: 0x5a6c7a }); 
+          .stroke({ width: 1, color: 0x5a6c7a });
           pixiApp.stage.addChild(graphics)
-          
+
           // trackArray.push(newTrack)
         }
         pixiApp.stage.addChild(musicTrackLine,musicTrack)
@@ -501,7 +546,7 @@ class Clip {
       const timeColumnx=new Graphics()
       const ruler=new Container()
       // const fontStyle = { fontName: 'Arial', fontSize: 16, tint: 0xffffff };
-      
+
       if(timeTrack&&parent){
         timeTrack
           .rect(0,0,width,TRACK_TOP)
@@ -561,10 +606,11 @@ class Clip {
         const newTrack=new Track(trackId)
         newTrack.clips.push(newClip)
         trackMap.set(trackId,newTrack)
-
+      } else {
+        trackMap.get(trackId)?.clips.push(newClip)
       }
       console.log(trackMap);
-      
+
       pixiApp.stage.addChild(newClip.container)
     })
 
@@ -579,7 +625,7 @@ class Clip {
         clip.durationTick=clip.itemWidth/30
 
       }
-    
+
       if (clip.resizeDir === 'left') {
         const newWidth = Math.max(40, clip.startWidth - dx)
         const diff = newWidth - clip.itemWidth
@@ -588,7 +634,7 @@ class Clip {
         clip.startTick-=diff/30
         // clip.durationTick+=diff/30
         clip.durationTick=clip.itemWidth/30
-        
+
       }
       //非换方向-移动
       if (!clip.resizeDir) {
@@ -659,7 +705,7 @@ class Clip {
       })
       }
     );
-    
+
   function throttle(fn:Function, delay:number) {
   let lastCall = 0;
   return function (...args: any[]) {
