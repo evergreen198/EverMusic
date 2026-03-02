@@ -13,11 +13,11 @@
             />
           </div>
           <div class="user-info">
-            <h2 class="username">音乐创作者</h2>
-            <p class="bio">热爱音乐，享受创作的过程，希望用音乐传递美好。</p>
+            <h2 class="username">{{ user.username || '音乐创作者' }}</h2>
+            <p class="bio">{{ user.bio || '热爱音乐，享受创作的过程，希望用音乐传递美好。' }}</p>
             <div class="stats">
               <div class="stat-item">
-                <span class="stat-value">0</span>
+                <span class="stat-value">{{ works.length }}</span>
                 <span class="stat-label">作品</span>
               </div>
               <div class="stat-item">
@@ -59,7 +59,14 @@
 
 <script setup lang="ts">
 import Aside from '../src/components/Aside.vue'
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+
+// 用户信息管理
+const user = ref<any>({
+  username: '音乐创作者',
+  bio: '热爱音乐，享受创作的过程，希望用音乐传递美好。',
+  avatar_url: '/img/pexels-ecaterina-susu-1790735746-29779303.jpg'
+});
 
 // 模拟作品数据
 const works = ref([
@@ -94,6 +101,48 @@ const works = ref([
     duration: '3:45'
   }
 ])
+
+// 加载状态
+const loading = ref(true)
+const error = ref('')
+
+// 从localStorage获取用户信息
+const loadUserInfo = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const userData = JSON.parse(userStr);
+      user.value = {
+        username: userData.username || user.value.username,
+        bio: userData.bio || user.value.bio,
+        avatar_url: userData.avatar_url || user.value.avatar_url
+      };
+    } catch (error) {
+      console.error('解析用户信息失败:', error);
+      // 保持默认值
+    }
+  }
+  loading.value = false;
+};
+
+// 监听localStorage变化，实时更新用户信息
+const handleStorageChange = (event: StorageEvent) => {
+  if (event.key === 'user') {
+    loadUserInfo();
+  }
+};
+
+// 组件挂载时获取用户信息
+onMounted(() => {
+  loadUserInfo();
+  // 监听localStorage变化
+  window.addEventListener('storage', handleStorageChange);
+});
+
+// 组件卸载时清理事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange);
+});
 </script>
 
 <style scoped>

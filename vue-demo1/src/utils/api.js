@@ -25,14 +25,13 @@ const request = axios.create({
 //     return Promise.reject(error)
 //   }
 // )
-
 // 响应拦截器
 request.interceptors.response.use(
   response => {
     // 对响应数据做点什么
     const res = response.data
-    // 根据业务状态码处理
-    if (response.status !== 200) {
+    // 根据业务状态码处理 - 2xx 状态码都表示成功
+    if (response.status < 200 || response.status >= 300) {
       // 处理错误
       return Promise.reject(new Error(res.message || 'Error'))
     }
@@ -54,11 +53,29 @@ export function register(data) {
 }
 
 export function login(data) {
-
   return request.post('/login', data)
-
-
 }
+
+// 项目相关 API
+//创建项目√
+export function createProject(data) {
+  return request.post('/projects', data)
+}
+
+export function updateProject(id, data) {
+  return request.put(`/projects/${id}`, data)
+}
+//TODO：查询->导入
+export function getProject(id) {
+  return request.get(`/projects_data/${id}`)
+}
+
+//TODO查询项目列表
+export function getProjectList(userId) {
+  return request.get(`/projects_list?userId=${userId}`)
+}
+
+
 
 // export function getUserInfo(id) {
 //   return request.get(`/user/${id}`)

@@ -1,18 +1,104 @@
 <template>
     <div class="app-layout">
+      <!-- 导入作品弹窗 -->
+      <div v-if="showImportModal" class="modal-overlay" @click="closeImportModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>导入作品</h3>
+            <button class="modal-close" @click="closeImportModal">×</button>
+          </div>
+          <div class="modal-body">
+            <button class="modal-option-btn" @click="handleViewHistory">
+              <span class="btn-icon">📁</span>
+              <span class="btn-text">查看历史作品</span>
+            </button>
+            <button class="modal-option-btn" @click="handleJoinCollaboration">
+              <span class="btn-icon">🤝</span>
+              <span class="btn-text">加入协作</span>
+            </button>
+            <button class="modal-option-btn" @click="handleImportMidi">
+              <span class="btn-icon">🎵</span>
+              <span class="btn-text">导入MIDI文件</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 导出作品弹窗 -->
+      <div v-if="showExportModal" class="modal-overlay" @click="closeExportModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>导出作品</h3>
+            <button class="modal-close" @click="closeExportModal">×</button>
+          </div>
+          <div class="modal-body">
+            <button class="modal-option-btn" @click="handleExportWav">
+              <span class="btn-icon">🔊</span>
+              <span class="btn-text">导出为WAV文件</span>
+            </button>
+            <button class="modal-option-btn" @click="handleExportMidi">
+              <span class="btn-icon">🎵</span>
+              <span class="btn-text">导出为MIDI文件</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 历史作品列表弹窗 -->
+      <div v-if="showHistoryModal" class="modal-overlay" @click="closeHistoryModal">
+        <div class="modal-content history-modal" @click.stop>
+          <div class="modal-header">
+            <h3>历史作品</h3>
+            <button class="modal-close" @click="closeHistoryModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingHistory" class="loading-text">加载中...</div>
+            <div v-else-if="historyError" class="error-text">{{ historyError }}</div>
+            <div v-else-if="projectList.length === 0" class="empty-text">暂无历史作品</div>
+            <div v-else class="project-list">
+              <div
+                v-for="project in projectList"
+                :key="project.id"
+                class="project-item"
+                @click="loadProject(project.id)"
+              >
+                <div class="project-info">
+                  <h4 class="project-title">{{ project.title }}</h4>
+                  <div class="project-details">
+                    <span class="detail-item">
+                      <span class="detail-label">BPM:</span>
+                      <span class="detail-value">{{ project.bpm }}</span>
+                    </span>
+                    <span class="detail-item">
+                      <span class="detail-label">时长:</span>
+                      <span class="detail-value">{{ formatDuration(project.duration_second) }}</span>
+                    </span>
+                    <span class="detail-item">
+                      <span class="detail-label">更新:</span>
+                      <span class="detail-value">{{ formatDate(project.updated_at) }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Aside @loaded="(msg)=>{asideLoaded=msg}" class="inline-block"></Aside>
     <section class="right">
 
       <div class="main">
         <nav class="nav">
             <div class="nav-chords">
-
+              <input id="title" type="text" placeholder="标题">
+              <input id="brief" type="text" placeholder="简介">
             </div>
 
             <div class="user">
             <div>
-                <router-link to="/User" class="user-name inline-block" href="">username</router-link>
-                <img src="/img/pexels-ecaterina-susu-1790735746-29779303.jpg" alt="">
+                <router-link to="/User" class="user-name inline-block">{{ currentUser?.username || 'username' }}</router-link>
+                <img :src="currentUser?.avatar_url || '/img/pexels-ecaterina-susu-1790735746-29779303.jpg'" alt="">
             </div>
             <div class="user-detail">
               <ul>
@@ -47,8 +133,8 @@
             <BpmSlider style="display: inline-block;">22</BpmSlider >
           </div>
           <div class="function-react">
-            <button id="function-save">
-              导入MIDI文件
+            <button id="function-import">
+              导入作品
             </button>
             <button id="function-save">
               保存作品
@@ -56,7 +142,7 @@
             <button id="function-invite">
               邀请协作
             </button>
-            <button id="function-export">
+            <button id="function-export" @click="openExportModal">
               导出作品
             </button>
           </div>
@@ -140,9 +226,320 @@
 import PianoRoll from '../src/components/PianoRoll.vue';
 import Aside from '../src/components/Aside.vue'
 import BpmSlider from '@/components/BpmSlider.vue';
-import { ref, watch, onMounted, onUnmounted, computed} from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import  { StartPlay } from '@/data/musicMaterials';
+import { createProject, updateProject,getProjectList,getProject } from '../src/utils/api.js';
 
+// 项目保存相关
+const currentProjectId = ref<number | null>(null);
+const projectVersion = ref<number>(1);
+const bpmValue = ref<number>(120);
+
+// 导入作品弹窗控制
+const showImportModal = ref<boolean>(false);
+
+// 历史作品弹窗控制
+const showHistoryModal = ref<boolean>(false);
+const projectList = ref<any[]>([]);
+const loadingHistory = ref<boolean>(false);
+const historyError = ref<string>('');
+
+
+
+// 导出作品弹窗控制
+const showExportModal = ref<boolean>(false);
+
+// 打开导出作品弹窗
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+// 关闭导出作品弹窗
+const closeExportModal = () => {
+  showExportModal.value = false;
+};
+
+// 导出为WAV文件（TODO: 待实现）
+const handleExportWav = () => {
+  console.log('导出为WAV文件');
+  // TODO: 实现WAV导出功能
+  closeExportModal();
+};
+
+// 乐器ID到MIDI乐器编号的映射
+const instrumentToMidiMap: Record<string, number> = {
+  'piano': 0,      // Acoustic Grand Piano
+  'guitar': 24,    // Acoustic Guitar (nylon)
+  'bass': 33,      // Electric Bass (finger)
+  'drum': 118,     // Synth Drum
+  'string': 48,    // String Ensemble 1
+  '管乐': 56,      // Trumpet
+  '打击乐': 115,   // Woodblock
+};
+
+
+function handleExportMidi(){}
+
+// 打开导入作品弹窗
+const openImportModal = () => {
+  showImportModal.value = true;
+};
+
+// 关闭导入作品弹窗
+const closeImportModal = () => {
+  showImportModal.value = false;
+};
+
+// 关闭历史作品弹窗
+const closeHistoryModal = () => {
+  showHistoryModal.value = false;
+};
+
+// 格式化时长（秒 -> 分:秒）
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+// 格式化日期
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+// 查看历史作品
+const handleViewHistory = async () => {
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const userId = currentUser?.id || null;
+
+  if (!userId) {
+    alert('请先登录');
+    return;
+  }
+
+  try {
+    loadingHistory.value = true;
+    historyError.value = '';
+
+    const response = await getProjectList(userId);
+    projectList.value = response || [];
+
+    closeImportModal();
+    showHistoryModal.value = true;
+  } catch (error) {
+    console.error('获取历史作品失败:', error);
+    historyError.value = '获取历史作品失败，请重试';
+  } finally {
+    loadingHistory.value = false;
+  }
+};
+
+// 加载项目到编辑器
+const loadProject = async (projectId: number) => {
+  try {
+    const response = await getProject(projectId);
+    console.log('加载项目:', response);
+
+    // 获取项目数据
+    const projectData = response.data || response;
+
+    if (!projectData.project_json) {
+      alert('项目数据格式错误');
+      return;
+    }
+
+    // 解析project_json
+    let projectJson;
+    if (typeof projectData.project_json === 'string') {
+      projectJson = JSON.parse(projectData.project_json);
+    } else {
+      projectJson = projectData.project_json;
+    }
+
+    // 获取PianoRoll组件实例
+    const pianoLayout = document.querySelector('.piano-layout') as any;
+
+    if (pianoLayout && pianoLayout.importTrackMapFromJSON) {
+      // 调用PianoRoll的导入函数
+      pianoLayout.importTrackMapFromJSON(projectJson);
+
+      // 更新当前项目ID
+      currentProjectId.value = projectId;
+
+      // 更新项目信息
+      const titleInput = document.getElementById('title') as HTMLInputElement;
+      const briefInput = document.getElementById('brief') as HTMLInputElement;
+      if (titleInput) titleInput.value = projectData.title || '';
+      if (briefInput) briefInput.value = projectData.description || '';
+
+      closeHistoryModal();
+      alert('项目加载成功！');
+    } else {
+      alert('无法访问编辑器，请刷新页面后重试');
+    }
+  } catch (error) {
+    console.error('加载项目失败:', error);
+    alert('加载项目失败，请重试');
+  }
+};
+
+// 加入协作（TODO: 待实现）
+const handleJoinCollaboration = () => {
+  console.log('加入协作');
+  // TODO: 实现加入协作功能
+  closeImportModal();
+};
+
+// 导入MIDI文件（TODO: 待实现）
+const handleImportMidi = () => {
+  console.log('导入MIDI文件');
+  // TODO: 实现导入MIDI文件功能
+  closeImportModal();
+};
+
+// 获取BPM值
+const getBpmValue = (): number => {
+  // 从BpmSlider组件获取当前BPM值
+  const bpmInput = document.querySelector('#volume') as HTMLInputElement;
+  return bpmInput ? parseInt(bpmInput.value) || 120 : 120;
+};
+
+// 创建保存项目的数据体
+function createProjectSaveData(): any {
+  // 获取当前登录用户信息
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const userId = currentUser?.id || null;
+
+  // 获取项目基本信息
+  const titleInput = document.getElementById('title') as HTMLInputElement;
+  const briefInput = document.getElementById('brief') as HTMLInputElement;
+
+  const title = titleInput?.value?.trim() || '未命名项目';
+  const description = briefInput?.value?.trim() || '';
+  const bpm = getBpmValue();
+
+  // 获取PianoRoll组件实例（通过DOM访问绑定的函数）
+  const pianoLayout = document.querySelector('.piano-layout') as any;
+
+  // 获取项目JSON数据
+  let projectJson = { tracks: [] };
+  let durationSecond = 4;
+
+  if (pianoLayout && pianoLayout.exportTrackMapToJSON) {
+    projectJson = pianoLayout.exportTrackMapToJSON();
+    durationSecond = pianoLayout.calculateSongDuration();
+  }
+
+  // TODO: 非首次保存的version计算
+  // 如果是更新操作，应该从后端获取当前version并+1
+  const version = currentProjectId.value ? projectVersion.value : 1;
+
+  // 构建保存数据
+  const saveData = {
+    creator_id: userId,
+    title: title,
+    bpm: bpm,
+    duration_second: durationSecond,
+    project_json: JSON.stringify(projectJson),
+    version: version,
+    last_edited_by: userId,
+    description: description,
+    created_at: currentProjectId.value ? undefined : new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return saveData;
+}
+
+// 保存项目函数
+async function saveProject(): Promise<void> {
+  try {
+    // 创建保存数据
+    const data = createProjectSaveData();
+
+    // 验证必要字段
+    if (!data.creator_id) {
+      alert('请先登录后再保存项目');
+      return;
+    }
+
+    if (!data.title) {
+      alert('请输入项目标题');
+      return;
+    }
+
+    // 调用后端API保存项目
+    let response;
+    if (currentProjectId.value) {
+      // 更新现有项目
+      response = await updateProject(currentProjectId.value, data);
+      console.log('项目更新成功:', response);
+      alert('项目更新成功！');
+    } else {
+      // 创建新项目
+      response = await createProject(data);
+      console.log('项目创建成功:', response);
+      alert('项目创建成功！');
+
+      // 保存新项目ID
+      if (response.data && response.data.id) {
+        currentProjectId.value = response.data.id;
+      }
+    }
+
+    // 更新版本号
+    projectVersion.value++;
+
+  } catch (error) {
+    console.error('保存项目失败:', error);
+    alert('保存项目失败，请重试');
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 用户信息管理
+const currentUser = ref<any>(null);
+
+// 从localStorage获取用户信息
+const loadUserInfo = () => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      currentUser.value = JSON.parse(userStr);
+    } catch (error) {
+      console.error('解析用户信息失败:', error);
+      currentUser.value = null;
+    }
+  }
+};
+
+// 监听localStorage变化，实时更新用户信息
+const handleStorageChange = (event: StorageEvent) => {
+  if (event.key === 'user') {
+    loadUserInfo();
+  }
+};
 
 const asideLoaded=ref(false)
 const isMaterialUnfold=ref([])
@@ -160,6 +557,24 @@ let materialItem=document.querySelectorAll('.material-list')
   }
 
   onMounted(() => {
+    // 加载用户信息
+    loadUserInfo();
+
+    // 监听localStorage变化
+    window.addEventListener('storage', handleStorageChange);
+
+    // 绑定保存按钮点击事件
+    const saveBtn = document.getElementById('function-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', saveProject);
+    }
+
+    // 绑定导入按钮点击事件
+    const importBtn = document.getElementById('function-import');
+    if (importBtn) {
+      importBtn.addEventListener('click', openImportModal);
+    }
+
     const pianoCanvas=document.querySelector('.piano') as HTMLElement
     //放下元素位置的事件监听
     pianoCanvas?.addEventListener('dragover',(e)=>{
@@ -217,6 +632,7 @@ observeAsideChanges();
 onUnmounted(() => {
   // 清理事件监听，防止内存泄漏
   window.removeEventListener('resize', calculatePianoWidth);
+  window.removeEventListener('storage', handleStorageChange);
   const asideBtn = document.querySelector('.aside-btn');
   if (asideBtn) {
     asideBtn.removeEventListener('click', calculatePianoWidth);
@@ -642,4 +1058,175 @@ z-index: 999 ;
   overflow: hidden;
 }
 
+/* 导入作品弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background-color: #1e3a4c;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 350px;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2a4a5c;
+}
+
+.modal-header h3 {
+  color: #CCD0CF;
+  font-size: 18px;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #CCD0CF;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+  background-color: #2a4a5c;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background-color: #253745;
+  border: 1px solid #2a4a5c;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.modal-option-btn:hover {
+  background-color: #2a4a5c;
+  border-color: #3a5a6c;
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  font-size: 24px;
+}
+
+.btn-text {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 历史作品弹窗样式 */
+.history-modal {
+  max-width: 600px;
+}
+
+.loading-text,
+.error-text,
+.empty-text {
+  text-align: center;
+  padding: 40px 20px;
+  color: #CCD0CF;
+  font-size: 14px;
+}
+
+.error-text {
+  color: #ff6b6b;
+}
+
+.project-list {
+  padding: 0 5px 0 5px;
+  max-height: 450px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction:column;
+  gap: 12px;
+}
+
+.project-item {
+  z-index: 999;
+  background-color: #253745;
+  border: 1px solid #2a4a5c;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-item:hover {
+  background-color: #2a4a5c;
+  border-color: #3a5a6c;
+  transform: translateX(4px);
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-title {
+  color: #CCD0CF;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.project-details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.detail-label {
+  color: #8b9bb4;
+  font-size: 12px;
+}
+
+.detail-value {
+  color: #CCD0CF;
+  font-size: 12px;
+  font-weight: 500;
+}
 </style>

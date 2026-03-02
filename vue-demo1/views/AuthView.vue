@@ -18,7 +18,7 @@
       <!-- 登录表单 -->
       <form v-if="isLogin" class="form" @submit.prevent="handleLogin">
         <div class="input-group">
-          <input v-model="loginForm.email" type="email" placeholder="邮箱" required/>
+          <input v-model="loginForm.email" type="text" placeholder="邮箱或用户名" required/>
         </div>
         <div class="input-group">
           <input v-model="loginForm.password" type="password" placeholder="密码" required/>
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { login, register } from '@/utils/api.js'
+import { login, register } from '../src/utils/api.js'
 
 const router = useRouter()
 
@@ -84,13 +84,11 @@ const handleLogin = async () => {
   error.value = ''
 
   try {
-    // 发送登录请求
-
+    // 发送登录请求，支持用户名或邮箱登录
     const data = {
-      email: loginForm.email,
-      password: loginForm.password
+      email: loginForm.email, // 可以是邮箱或用户名
+      password: loginForm.password // 使用password字段
     }
-
     const response = await login(data)
 
     // 登录成功，存储用户信息和token
@@ -99,18 +97,13 @@ const handleLogin = async () => {
     router.push('/')
   } catch (err) {
     // 处理错误
-    console.log(err);
-
     if (err.response) {
       // 服务器返回错误
       error.value = err.response.data.error || '登录失败'
-    console.log('1');
-
     } else {
       // 网络错误等
       error.value = '登录失败，请检查网络连接'
     }
-
   } finally {
     loading.value = false
   }

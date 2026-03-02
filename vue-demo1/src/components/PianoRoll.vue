@@ -1,11 +1,11 @@
-﻿<template>
+<template>
     <div class="piano-layout">
     </div>
   </template>
 
   <script setup lang="ts">
   import { onMounted, ref, reactive, nextTick, TrackOpTypes } from "vue";
-  import { Application,Graphics,BitmapText, BitmapFont,Container, Rectangle} from "pixi.js";
+  import { Application,Graphics,BitmapText, BitmapFont,Container, Rectangle, log2} from "pixi.js";
   import * as Tone from 'tone'
   import { Midi } from '@tonejs/midi'
   import { instrumentSampleConfigs } from '@/utils/materials'
@@ -99,6 +99,7 @@ class Track{
     this.drawTrack()
     this.bindEvents()
   }
+
   bindEvents() {
     this.container.on('drop',this.addClip)
   }
@@ -138,7 +139,7 @@ class Track{
 
     Tone.loaded().then(() => {
       const notes = clip.notes.length === 1 ? clip.notes[0] : clip.notes
-      const startTime = `+${clip.startTick}` // 相对于当前时间的开始时间
+      const startTime = `+${clip.startsecond}` // 相对于当前时间的开始时间
 
       // 根据 rhythmId 处理不同的节奏型
       switch (clip.rhythmId) {
@@ -301,21 +302,20 @@ class Track{
   // 启动播放并设置持续时长
   Tone.getTransport().start()
   const duration = this.clips.length > 0
-    ? Math.max(...this.clips.map(c => c.startTick + c.durationTick)) + 2
+    ? Math.max(...this.clips.map(c => c.startsecond + c.durationsecond)) + 2
     : 4
   Tone.getTransport().stop(`+${duration}`)
 }
 }
 const trackMap: Map<number, Track> = new Map<number, Track>(); // 存放所有轨道
+
 class Clip {
   // 全局自增的 clip 唯一标识
   static nextClipId = 0
-
   clipId: number
   //0.1s=3px
-
-  startTick:number//开始时间 以像素表示 1px=1/30s
-  durationTick:number//时长
+  startsecond:number//开始时间 以像素表示 1px=1/30s
+  durationsecond:number//时长
   instrumentId: InstrumentId
   rhythmId: string
   isChord: boolean
@@ -325,7 +325,6 @@ class Clip {
   label: BitmapText
   deleteButton: Graphics
   content:string
-
 
   itemWidth =119
   itemHeight = 30
@@ -366,13 +365,13 @@ class Clip {
     this.container.addChild(this.ev, this.label, this.deleteButton)
     this.container.x = x
     this.container.y = y
-    this.startTick=x
+    this.startsecond=x
     this.container.eventMode = 'static'
     this.container.cursor = 'pointer'
     this.container.hitArea = new Rectangle(0, 0, this.itemWidth, this.itemHeight)
-    this.startTick=x/30
-    this.durationTick=4
-    console.log(this.startTick);
+    this.startsecond=x/30
+    this.durationsecond=4
+    console.log(this.startsecond);
     this.redraw()
     this.bindEvents()
     }
@@ -481,7 +480,18 @@ class Clip {
       })
   onMounted(
 
+
     async () => {
+
+        const pianoLayout = document.querySelector('.piano-layout');
+  if (pianoLayout) {
+    (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
+    (pianoLayout as any).calculateSongDuration = calculateSongDuration;
+    (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
+  }
+
+
+
       //挂载pixi-canvas
       const pixiApp = new Application()
       await pixiApp.init({
@@ -498,11 +508,79 @@ class Clip {
       pixiApp.canvas.style.height=1600+'px'
       document.querySelector('.piano-layout')?.appendChild(pixiApp.canvas)
 
+
+function importTrackMapFromJSON(projectData: any): void {
+  // 清空现有trackMap
+  trackMap.forEach(track => {
+    track.clips.forEach(clip => {
+      clip.container.parent?.removeChild(clip.container);
+    });
+  });
+  trackMap.clear();
+
+  // 重置clip ID计数器
+  Clip.nextClipId = 0;
+
+  // 导入tracks
+  if (projectData.tracks && Array.isArray(projectData.tracks)) {
+    projectData.tracks.forEach((trackData: any) => {
+      const track = new Track(trackData.track_id);
+      track.midiChannel = trackData.midiChannel;
+      track.volume = trackData.volume;
+
+      // 导入clips
+      if (trackData.clips && Array.isArray(trackData.clips)) {
+        trackData.clips.forEach((clipData: any) => {
+          // 计算位置
+          const x = clipData.startsecond * 30; // tick转像素
+          const y = TRACK_TOP + (trackData.track_id - 1) * TRACK_HEIGHT;
+
+          // 创建clip
+          const clip = new Clip(
+            clipData.content,
+            x,
+            y,
+            clipData.instrumentId,
+            clipData.rhythmId
+          );
+
+          // 设置clip属性
+          clip.clipId = clipData.clip_id;
+          clip.startsecond = clipData.startsecond;
+          clip.durationsecond = clipData.durationsecond;
+          clip.isChord = clipData.isChord;
+          clip.notes = clipData.notes;
+          clip.itemWidth = clipData.itemWidth || 119;
+          clip.itemHeight = clipData.itemHeight || 30;
+
+          // 更新clip显示
+          clip.redraw();
+
+          // 添加到track
+          track.clips.push(clip);
+
+          // 添加到舞台
+          pixiApp.stage.addChild(clip.container);
+        });
+      }
+
+      // 添加到trackMap
+      trackMap.set(trackData.track_id, track);
+    });
+  }
+
+  console.log('项目数据导入成功');
+}
+
+
+
+
+
     if(pianoCanvas.value){
     // 初始化时设置为0，而不是从marginLeft获取
       positionState.translateX = 0;
     }
-    // 使用nextTick确保所有DOM元素都已渲染完成
+    // 使用nextsecond确保所有DOM元素都已渲染完成
     await nextTick();
     // 正确获取父元素 - 使用组件实例的parentElement
     const parent = pianoCanvas.value?.parentElement?.parentElement ||
@@ -622,7 +700,7 @@ class Clip {
       const dx = e.global.x - clip.startX
       if (clip.resizeDir === 'right') {
         clip.itemWidth = Math.max(40, clip.startWidth + dx)
-        clip.durationTick=clip.itemWidth/30
+        clip.durationsecond=clip.itemWidth/30
 
       }
 
@@ -631,9 +709,9 @@ class Clip {
         const diff = newWidth - clip.itemWidth
         clip.itemWidth = newWidth
         clip.container.x -= diff
-        clip.startTick-=diff/30
-        // clip.durationTick+=diff/30
-        clip.durationTick=clip.itemWidth/30
+        clip.startsecond-=diff/30
+        // clip.durationsecond+=diff/30
+        clip.durationsecond=clip.itemWidth/30
 
       }
       //非换方向-移动
@@ -643,9 +721,9 @@ class Clip {
         if (lastX) {
           dx2 = e.clientX - lastX
           clip.container.x += dx2
-          clip.startTick+=dx2/30
-          // clip.durationTick+=dx2/30
-          clip.durationTick=clip.itemWidth/30
+          clip.startsecond+=dx2/30
+          // clip.durationsecond+=dx2/30
+          clip.durationsecond=clip.itemWidth/30
 
         }
         // 计算轨道
@@ -703,6 +781,14 @@ class Clip {
           if(item.clips.length)item.play()
         })
       })
+
+
+
+
+
+
+
+
       }
     );
 
@@ -729,6 +815,86 @@ positionState.translateX -= e.deltaX;
   pianoCanvas.value.style.transform = `translateX(${positionState.translateX}px)`;
 }
 },5),{passive:false})
+
+// 导出trackMap为JSON格式
+function exportTrackMapToJSON(): any {
+  const tracks: any[] = [];
+
+  trackMap.forEach((track, trackId) => {
+    tracks.push({
+      track_id: track.id,
+      midiChannel: track.midiChannel,
+      volume: track.volume,
+      clips: track.clips.map(clip => ({
+        clip_id: clip.clipId,
+        startsecond: clip.startsecond,
+        durationsecond: clip.durationsecond,
+        instrumentId: clip.instrumentId,
+        rhythmId: clip.rhythmId,
+        isChord: clip.isChord,
+        notes: clip.notes,
+        content: clip.content,
+        itemWidth: clip.itemWidth,
+        itemHeight: clip.itemHeight
+      }))
+    });
+  });
+
+  return { tracks };
+}
+
+function editorToMidi(bpm:number){
+  const midi=new Midi()
+  // midi.header.setTempo(bpm)
+  // trackMap.forEach(editorTrack => {
+  //   const track=midi.addTrack()
+  //   track.channel=editorTrack.midiChannel
+  //   const velocity=100
+  //   editorTrack.clips.forEach(clip => {
+  //     const{
+  //       note:,
+  //       durationsecond,
+  //       startsecond,
+  //       instrumentId
+  //     }=clip
+  //   });
+  // });
+  return midi
+}
+
+// 计算歌曲时长（秒）
+function calculateSongDuration(): number {
+  if (trackMap.size === 0) {
+    return 4; // 默认4秒
+  }
+
+
+  let maxEndTime = 0;
+
+  trackMap.forEach(track => {
+    track.clips.forEach(clip => {
+      const endTime = clip.startsecond + clip.durationsecond;
+      if (endTime > maxEndTime) {
+        maxEndTime = endTime;
+      }
+    });
+  });
+
+  // 加上2秒缓冲时间
+  return Math.ceil((maxEndTime ) + 2);
+}
+
+// 暴露给父组件使用
+defineExpose({
+  exportTrackMapToJSON,
+  calculateSongDuration
+});
+
+// 将函数绑定到DOM元素，便于父组件通过ref访问
+onMounted(() => {
+
+});
+
 
   </script>
 
