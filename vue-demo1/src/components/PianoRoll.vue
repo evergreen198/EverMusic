@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="piano-layout">
     </div>
   </template>
@@ -7,11 +7,11 @@
   import { onMounted, ref, reactive, nextTick, TrackOpTypes } from "vue";
   import { Application,Graphics,BitmapText, BitmapFont,Container, Rectangle, log2} from "pixi.js";
   import * as Tone from 'tone'
-  import { Midi } from '@tonejs/midi'
+  // import { Midi } from '@tonejs/midi'
   import { instrumentSampleConfigs } from '@/utils/materials'
   import type { InstrumentId } from '@/utils/materials'
   import { noteNameToMidi, midiToNoteName } from '@/utils/noteToMidi'
-
+import toWav from "audiobuffer-to-wav"
   let fatherWidth:number = 0;
   const TRACK_TOP = 40
   const TRACK_HEIGHT = 30
@@ -81,6 +81,7 @@
   class ClipInteraction {
   static activeClip: Clip | null = null
 }
+
 class Track{
   id:number
   midiChannel:number
@@ -488,6 +489,8 @@ class Clip {
     (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
     (pianoLayout as any).calculateSongDuration = calculateSongDuration;
     (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
+    (pianoLayout as any).trackMap = trackMap;
+    (pianoLayout as any).exportAsWAV = exportAsWAV;
   }
 
 
@@ -533,7 +536,7 @@ function importTrackMapFromJSON(projectData: any): void {
         trackData.clips.forEach((clipData: any) => {
           // 计算位置
           const x = clipData.startsecond * 30; // tick转像素
-          const y = TRACK_TOP + (trackData.track_id - 1) * TRACK_HEIGHT;
+          const y = TRACK_TOP + (trackData.track_id) * TRACK_HEIGHT;
 
           // 创建clip
           const clip = new Clip(
@@ -776,17 +779,11 @@ function importTrackMapFromJSON(projectData: any): void {
   lastY = 0;
 });
 
-      document.querySelector('.function-play')?.addEventListener('click',()=>{
-        trackMap.forEach(item=>{
-          if(item.clips.length)item.play()
-        })
-      })
-
-
-
-
-
-
+      // document.querySelector('.function-play')?.addEventListener('click',()=>{
+      //   trackMap.forEach(item=>{
+      //     if(item.clips.length)item.play()
+      //   })
+      // })
 
 
       }
@@ -843,24 +840,7 @@ function exportTrackMapToJSON(): any {
   return { tracks };
 }
 
-function editorToMidi(bpm:number){
-  const midi=new Midi()
-  // midi.header.setTempo(bpm)
-  // trackMap.forEach(editorTrack => {
-  //   const track=midi.addTrack()
-  //   track.channel=editorTrack.midiChannel
-  //   const velocity=100
-  //   editorTrack.clips.forEach(clip => {
-  //     const{
-  //       note:,
-  //       durationsecond,
-  //       startsecond,
-  //       instrumentId
-  //     }=clip
-  //   });
-  // });
-  return midi
-}
+
 
 // 计算歌曲时长（秒）
 function calculateSongDuration(): number {
@@ -887,13 +867,69 @@ function calculateSongDuration(): number {
 // 暴露给父组件使用
 defineExpose({
   exportTrackMapToJSON,
-  calculateSongDuration
+  calculateSongDuration,
+  trackMap
 });
 
-// 将函数绑定到DOM元素，便于父组件通过ref访问
-onMounted(() => {
+//导出为 WAV
+async function exportAsWAV() {
+  await Tone.loaded()
+  const duration = calculateSongDuration()
 
-});
+  // 离线渲染音频
+  const audioBuffer = await Tone.Offline(async () => {
+    // 读取 BPM
+    const bpmInput = document.querySelector('#volume') as HTMLInputElement | null
+    const bpm = bpmInput ? Number(bpmInput.value) || 120 : 120
+    Tone.getTransport().bpm.value = bpm
+
+    // 遍历所有轨道和片段
+    trackMap.forEach(track => {
+      track.clips.forEach(clip => {
+        // const config = instrumentSampleConfigs[clip.instrumentId]
+        const poly = new Tone.PolySynth(Tone.Synth).toDestination()
+
+        const notes = clip.notes.length === 1 ? clip.notes[0] : clip.notes
+
+        // 简化：按 rhythmId 处理（参考你的 play 函数）
+        switch (clip.rhythmId) {
+          case 'whole':
+            poly.triggerAttackRelease(notes as any, '1n', clip.startsecond)
+            break
+          case 'half':
+            poly.triggerAttackRelease(notes as any, '2n', clip.startsecond)
+            break
+          case 'quarter':
+            poly.triggerAttackRelease(notes as any, '4n', clip.startsecond)
+            break
+          default:
+            poly.triggerAttackRelease(notes as any, '4n', clip.startsecond)
+        }
+      })
+    })
+
+    Tone.getTransport().start()
+  }, duration)
+
+  // 下载 WAV
+  const wavData=toWav(audioBuffer.get() as AudioBuffer)
+  const blob=new Blob([wavData],{type:"audio/wav"})
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "export.wav"
+  a.click()
+
+  URL.revokeObjectURL(url)
+
+  // const wav = await Tone.Offline.toWav(audioBuffer)
+  // const url = URL.createObjectURL(wav)
+  // const link = document.createElement('a')
+  // link.href = url
+  // link.download = 'music.wav'
+  // link.click()
+}
 
 
   </script>

@@ -36,11 +36,13 @@
       <!-- 作品展示 -->
       <div class="user-works">
         <h3 class="works-title">我的作品</h3>
-        <div class="works-grid">
+        <div  class="works-grid">
           <div
             v-for="(work, index) in works"
-            :key="index"
+            :key="work.id || index"
             class="work-item"
+            :data-work-id="work.id"
+            @click="handleLoadProject(work.id)"
           >
             <div class="work-thumbnail">
               <div class="thumbnail-placeholder"></div>
@@ -48,7 +50,7 @@
             </div>
             <div class="work-info">
               <h4 class="work-title">{{ work.title }}</h4>
-              <p class="work-meta">{{ work.date }} • {{ work.duration }}</p>
+              <p class="work-meta">{{ work.updated_at }} • {{ work.duration_second }}</p>
             </div>
           </div>
         </div>
@@ -59,7 +61,12 @@
 
 <script setup lang="ts">
 import Aside from '../src/components/Aside.vue'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted,onBeforeMount } from 'vue'
+import { useRouter } from 'vue-router'
+import {getProjectList } from '../src/utils/api.js';
+
+const router = useRouter()
+
 
 // 用户信息管理
 const user = ref<any>({
@@ -69,38 +76,14 @@ const user = ref<any>({
 });
 
 // 模拟作品数据
-const works = ref([
-  {
-    title: '夏日回忆',
-    date: '2024-06-15',
-    duration: '2:45'
-  },
-  {
-    title: '夜晚的旋律',
-    date: '2024-05-20',
-    duration: '3:12'
-  },
-  {
-    title: '城市之光',
-    date: '2024-04-10',
-    duration: '2:58'
-  },
-  {
-    title: '宁静时刻',
-    date: '2024-03-05',
-    duration: '3:30'
-  },
-  {
-    title: '春日序曲',
-    date: '2024-02-18',
-    duration: '2:20'
-  },
-  {
-    title: '星空漫步',
-    date: '2024-01-30',
-    duration: '3:45'
-  }
-])
+interface Work {
+  title: string;
+  updated_at: string;
+  duration_second: string;
+  id:number
+}
+
+const works = ref<Work[]>([])
 
 // 加载状态
 const loading = ref(true)
@@ -131,7 +114,10 @@ const handleStorageChange = (event: StorageEvent) => {
     loadUserInfo();
   }
 };
+onBeforeMount(()=>{
+  LoadHistoryProject()
 
+})
 // 组件挂载时获取用户信息
 onMounted(() => {
   loadUserInfo();
@@ -143,6 +129,46 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('storage', handleStorageChange);
 });
+
+async function LoadHistoryProject(){
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const userId = currentUser?.id || null;
+
+  if (!userId) {
+    alert('请先登录');
+    return;
+  }
+
+  try {
+    const response = await getProjectList(userId);
+    works.value=response
+    console.log(works.value);
+
+  } catch (error) {
+    console.error('获取历史作品失败:', error);
+    error.value = '获取历史作品失败，请重试'
+    works.value = []  // 出错时设为空数组
+  } finally {
+    loading.value = false
+  }
+}
+
+// 点击作品加载项目
+const handleLoadProject = (projectId: number) => {
+  if (!projectId) {
+    console.error('项目ID不存在');
+    return;
+  }
+  
+  // 使用路由导航到编辑器页面，通过state传递项目ID
+  router.push({ 
+    path: '/', 
+    state: { projectId: projectId.toString() } 
+  });
+  
+  console.log('加载项目:', projectId);
+};
 </script>
 
 <style scoped>

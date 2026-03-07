@@ -5,7 +5,7 @@ const baseURL = 'http://localhost:7220/api'
 // 创建 axios 实例
 const request = axios.create({
   baseURL, // 基础URL
-  timeout: 10000, // 请求超时时间
+  timeout: 1000000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
   }
@@ -62,33 +62,42 @@ export function createProject(data) {
   return request.post('/projects', data)
 }
 
+// 更新项目√
 export function updateProject(id, data) {
   return request.put(`/projects/${id}`, data)
 }
-//TODO：查询->导入
+// 项目所有详情√
 export function getProject(id) {
   return request.get(`/projects_data/${id}`)
 }
 
-//TODO查询项目列表
+// 查询项目列表√
 export function getProjectList(userId) {
   return request.get(`/projects_list?userId=${userId}`)
 }
 
+// 邀请项目合作者√
+export function sendInvitaion(data) {
+  return request.post(`/project/invites/${data.projectId}`, data)
+}
+
+//确认项目可加入√
+export function confirmInvitation(data) {
+  return request.get(`/project/invites/confirm?inviteCode=${data.inviteCode}`)
+}
 
 
-// export function getUserInfo(id) {
-//   return request.get(`/user/${id}`)
-// }
+//TODO：将合作者信息加入项目
+export function addCollaborator(data) {
+  return request.post(`/project/invites/${data.projectId}/collaborators`, data)
+}
 
-// // api/modules/article.js
-// import request from '@/utils/request'
+//TODO：将合作者计入邀请次数
+export function countInvitation(data) {
+  return request.post(`/project/invites/${data.projectId}/count`, data)
+}
 
-// export function getArticles(params) {
-//   return request.get('/articles', { params })
-// }
-
-// export function createArticle(data) {
-//   return request.post('/articles', data)
-// }
-
+// src/utils/api.js
+export function generateMusic(style) {
+  return request.post('/generate-music', { style });
+}

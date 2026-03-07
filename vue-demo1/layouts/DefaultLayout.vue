@@ -24,6 +24,118 @@
         </div>
       </div>
 
+      <!-- 加入协作弹窗 -->
+      <div v-if="showJoinModal" class="modal-overlay" @click="closeJoinModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>加入协作</h3>
+            <button class="modal-close" @click="closeJoinModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="join-input-container">
+              <p class="join-label">请输入邀请码</p>
+              <input
+                type="text"
+                v-model="inviteCodeInput"
+                class="join-input"
+                placeholder="输入10位邀请码"
+                maxlength="10"
+                @keyup.enter="confirmJoinCollaboration"
+              />
+              <p class="join-tip">输入邀请码后点击确认加入协作项目</p>
+            </div>
+            <button class="modal-action-btn" @click="confirmJoinCollaboration">
+              <span class="btn-icon">✓</span>
+              <span class="btn-text">确认加入</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 项目信息确认弹窗 -->
+      <div v-if="showProjectConfirmModal" class="modal-overlay" @click="closeProjectConfirmModal">
+        <div class="modal-content project-confirm-modal" @click.stop>
+          <div class="modal-header">
+            <h3>确认加入项目</h3>
+            <button class="modal-close" @click="closeProjectConfirmModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="project-confirm-info">
+              <div class="confirm-item">
+                <span class="confirm-label">项目标题：</span>
+                <span class="confirm-value">{{ pendingProjectInfo.title }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">创建者ID：</span>
+                <span class="confirm-value">{{ pendingProjectInfo.creator_id }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">项目时长：</span>
+                <span class="confirm-value">{{ formatDuration(pendingProjectInfo.duration_second) }}</span>
+              </div>
+              <div class="confirm-item">
+                <span class="confirm-label">项目描述：</span>
+                <span class="confirm-value">{{ pendingProjectInfo.description || '暂无描述' }}</span>
+              </div>
+            </div>
+            <p class="confirm-question">是否加入此项目进行协作？</p>
+            <div class="confirm-actions">
+              <button class="modal-action-btn secondary" @click="closeProjectConfirmModal">
+                <span class="btn-text">取消</span>
+              </button>
+              <button class="modal-action-btn primary" @click="confirmJoinProject">
+                <span class="btn-text">确认加入</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 导入MIDI文件弹窗 -->
+      <div v-if="showImportMidiModal" class="modal-overlay" @click="closeImportMidiModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>导入MIDI文件</h3>
+            <button class="modal-close" @click="closeImportMidiModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="midi-upload-container">
+              <div
+                class="upload-zone"
+                :class="{ 'drag-over': isDragOver }"
+                @dragover.prevent="handleDragOver"
+                @dragleave.prevent="handleDragLeave"
+                @drop.prevent="handleDrop"
+                @click="triggerFileInput"
+              >
+                <input
+                  type="file"
+                  ref="midiFileInput"
+                  accept=".mid,.midi"
+                  @change="handleFileSelect"
+                  style="display: none;"
+                />
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">点击或拖拽MIDI文件到此处</p>
+                <p class="upload-hint">支持 .mid 和 .midi 格式文件</p>
+              </div>
+              <div v-if="selectedMidiFile" class="file-info">
+                <p class="file-name">{{ selectedMidiFile.name }}</p>
+                <p class="file-size">{{ formatFileSize(selectedMidiFile.size) }}</p>
+              </div>
+            </div>
+            <button
+              class="modal-action-btn"
+              @click="confirmImportMidi"
+              :disabled="!selectedMidiFile"
+            >
+              <span class="btn-icon">📥</span>
+              <span class="btn-text">确认导入</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 导出作品弹窗 -->
       <div v-if="showExportModal" class="modal-overlay" @click="closeExportModal">
         <div class="modal-content" @click.stop>
@@ -39,6 +151,29 @@
             <button class="modal-option-btn" @click="handleExportMidi">
               <span class="btn-icon">🎵</span>
               <span class="btn-text">导出为MIDI文件</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 邀请协作弹窗 -->
+      <div v-if="showInviteModal" class="modal-overlay" @click="closeInviteModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>邀请协作</h3>
+            <button class="modal-close" @click="closeInviteModal">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="invite-code-container">
+              <p class="invite-label">邀请码</p>
+              <div class="invite-code-display">
+                {{ inviteCode }}
+              </div>
+              <p class="invite-tip">分享此邀请码给其他用户，邀请他们协作编辑此项目</p>
+            </div>
+            <button class="modal-action-btn" @click="copyInviteCode">
+              <span class="btn-icon">📋</span>
+              <span class="btn-text">复制邀请码</span>
             </button>
           </div>
         </div>
@@ -127,7 +262,7 @@
           </section>
         <footer class="function">
           <div class="function-action">
-            <h3 class="function-play">播放</h3>
+            <h3 class="function-play" @click="playBtn">播放</h3>
             <h3 class="function-pause">暂停</h3>
             <h3 class="function-speed">速度</h3>
             <BpmSlider style="display: inline-block;">22</BpmSlider >
@@ -139,7 +274,7 @@
             <button id="function-save">
               保存作品
             </button>
-            <button id="function-invite">
+            <button id="function-invite" @click="openInviteModal">
               邀请协作
             </button>
             <button id="function-export" @click="openExportModal">
@@ -228,12 +363,19 @@ import Aside from '../src/components/Aside.vue'
 import BpmSlider from '@/components/BpmSlider.vue';
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import  { StartPlay } from '@/data/musicMaterials';
-import { createProject, updateProject,getProjectList,getProject } from '../src/utils/api.js';
+import { createProject, updateProject,getProjectList,getProject,sendInvitaion,confirmInvitation,addCollaborator } from '../src/utils/api.js';
+import { Midi } from '@tonejs/midi';
+import * as Tone from "tone"
+import { watchEffect } from 'vue'
+
+
 
 // 项目保存相关
 const currentProjectId = ref<number | null>(null);
 const projectVersion = ref<number>(1);
 const bpmValue = ref<number>(120);
+
+// 访问trackMap
 
 // 导入作品弹窗控制
 const showImportModal = ref<boolean>(false);
@@ -249,6 +391,25 @@ const historyError = ref<string>('');
 // 导出作品弹窗控制
 const showExportModal = ref<boolean>(false);
 
+// 邀请协作弹窗控制
+const showInviteModal = ref<boolean>(false);
+const inviteCode = ref<string>('');
+
+// 加入协作弹窗控制
+const showJoinModal = ref<boolean>(false);
+const inviteCodeInput = ref<string>('');
+
+// 项目信息确认弹窗控制
+const showProjectConfirmModal = ref<boolean>(false);
+const pendingProjectInfo = ref<any>({});
+const pendingProjectId = ref<number | null>(null);
+
+// 导入MIDI文件弹窗控制
+const showImportMidiModal = ref<boolean>(false);
+const selectedMidiFile = ref<File | null>(null);
+const isDragOver = ref<boolean>(false);
+const midiFileInput = ref<HTMLInputElement | null>(null);
+
 // 打开导出作品弹窗
 const openExportModal = () => {
   showExportModal.value = true;
@@ -259,10 +420,56 @@ const closeExportModal = () => {
   showExportModal.value = false;
 };
 
+// 打开邀请协作弹窗
+const openInviteModal = () => {
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const userId = currentUser?.id || null;
+  inviteCode.value = generateRandomCode();
+  const inviteData={
+    projectId:currentProjectId.value,
+    invite_code:inviteCode.value,
+    inviter_id:userId,
+    role:"editor",
+    max_uses:5
+  }
+  console.log(inviteData);
+
+  sendInvitaion(inviteData)
+  showInviteModal.value = true;
+};
+
+// 关闭邀请协作弹窗
+const closeInviteModal = () => {
+  showInviteModal.value = false;
+};
+
+// 复制邀请码
+const copyInviteCode = () => {
+  navigator.clipboard.writeText(inviteCode.value).then(() => {
+    alert('邀请码已复制到剪贴板');
+  }).catch(() => {
+    // 如果clipboard API不可用，使用传统方法
+    const textarea = document.createElement('textarea');
+    textarea.value = inviteCode.value;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('邀请码已复制到剪贴板');
+  });
+};
+
 // 导出为WAV文件（TODO: 待实现）
-const handleExportWav = () => {
+const handleExportWav =() => {
+
   console.log('导出为WAV文件');
   // TODO: 实现WAV导出功能
+  const pianoLayout = document.querySelector('.piano-layout') as any;
+  const exportAsWAV = pianoLayout.exportAsWAV;
+  exportAsWAV()
+
+
   closeExportModal();
 };
 
@@ -278,11 +485,69 @@ const instrumentToMidiMap: Record<string, number> = {
 };
 
 
-function handleExportMidi(){}
+const handleExportMidi = () => {
+  const pianoLayout = document.querySelector('.piano-layout') as any;
+  const trackMap = pianoLayout.trackMap;
+
+  const midi=new Midi()
+
+  midi.header.setTempo(bpmValue.value)
+
+  trackMap.forEach((track)=>{
+    const midiTrack=midi.addTrack()
+    midiTrack.channel=track.midiChannel
+    //TODO:乐器分轨道
+    midiTrack.instrument.number=0
+    //midiTrack.instrument=instrumentToMidiMap[track.instrument]
+    track.clips.forEach((clip:any)=>{
+      if(!clip.isChord){
+        midiTrack.addNote({
+        time: clip.startsecond,
+        name: clip.content,
+        duration: clip.durationsecond,
+        velocity: 1
+      })
+      }else{
+        clip.notes.forEach((note:string)=>{
+          midiTrack.addNote({
+            time: clip.startsecond,
+            name: note,
+            duration: clip.durationsecond,
+            velocity: 1,
+          })
+        })
+      }
+
+    })
+
+  })
+
+// 浏览器下载
+// 生成二进制数据
+const midiData = midi.toArray()
+
+// 转成 Blob
+const blob = new Blob([midiData], { type: "audio/midi" })
+
+// 生成下载链接
+const url = URL.createObjectURL(blob)
+
+// 创建隐藏 a 标签触发下载
+const a = document.createElement("a")
+a.href = url
+a.download = "export.mid"
+document.body.appendChild(a)
+a.click()
+
+// 清理
+document.body.removeChild(a)
+URL.revokeObjectURL(url)
+}
 
 // 打开导入作品弹窗
 const openImportModal = () => {
   showImportModal.value = true;
+
 };
 
 // 关闭导入作品弹窗
@@ -390,18 +655,211 @@ const loadProject = async (projectId: number) => {
   }
 };
 
-// 加入协作（TODO: 待实现）
+// 检查AI生成的音乐数据
+const checkAIGeneratedMusic = () => {
+  setTimeout(() => {
+try {
+    const projectData = (sessionStorage.getItem('aiGeneratedMusic'));
+    if (projectData) {
+      const projectDataJson=JSON.parse(projectData);
+          const pianoLayout = document.querySelector('.piano-layout') as any;
+      if (projectDataJson &&pianoLayout && pianoLayout.importTrackMapFromJSON) {
+        // 加载音乐数据到编辑器
+        pianoLayout.importTrackMapFromJSON(projectDataJson);
+        sessionStorage.removeItem('aiGeneratedMusic');
+        alert('AI 生成的音乐已加载到编辑器！');
+      }
+    }
+  } catch (error) {
+    console.error('检查AI生成音乐失败:', error);
+  }
+  }, 2000);
+
+};
+
+
+// 加入协作
 const handleJoinCollaboration = () => {
-  console.log('加入协作');
-  // TODO: 实现加入协作功能
+  inviteCodeInput.value = '';
+  showJoinModal.value = true;
   closeImportModal();
 };
 
-// 导入MIDI文件（TODO: 待实现）
+// 关闭加入协作弹窗
+const closeJoinModal = () => {
+  showJoinModal.value = false;
+  inviteCodeInput.value = '';
+};
+
+// 确认加入协作
+const confirmJoinCollaboration = () => {
+  const code = inviteCodeInput.value.trim();
+
+  if (!code) {
+    alert('请输入邀请码');
+    return;
+  }
+
+  if (code.length !== 10) {
+    alert('邀请码格式错误，应为10位字符');
+    return;
+  }
+
+  // TODO: 调用后端API验证邀请码并加入协作
+  console.log('加入协作，邀请码:', code);
+
+  confirmInvitation({ inviteCode: code })
+    .then(response => {
+      if (response.error) {
+        alert(response.error);
+        return;
+      }
+      // 获取项目信息
+      getProject(response.project_id)
+        .then(projectResponse => {
+          const projectData = projectResponse.data || projectResponse;
+          // 存储项目信息
+          pendingProjectId.value = response.project_id;
+          pendingProjectInfo.value = {
+            title: projectData.title,
+            creator_id: projectData.creator_id,
+            duration_second: projectData.duration_second,
+            description: projectData.description
+          };
+          // 关闭输入弹窗，显示确认弹窗
+          closeJoinModal();
+          showProjectConfirmModal.value = true;
+        })
+        .catch(error => {
+          console.error('获取项目信息失败:', error);
+          alert('获取项目信息失败，请重试');
+        });
+    })
+    .catch(error => {
+      console.error('确认邀请失败:', error);
+      alert('确认邀请失败，请重试');
+    });
+};
+
+// 关闭项目信息确认弹窗
+const closeProjectConfirmModal = () => {
+  showProjectConfirmModal.value = false;
+  pendingProjectInfo.value = {};
+  pendingProjectId.value = null;
+};
+
+// 确认加入项目
+const confirmJoinProject = () => {
+  const userStr = localStorage.getItem('user');
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const user_id = currentUser?.id || null;
+  if (pendingProjectId.value) {
+    loadProject(pendingProjectId.value);
+    addCollaborator({
+      projectId: pendingProjectId.value,
+      user_id,
+      role:"editor",
+      permissions:{"edit":true}
+    })
+    closeProjectConfirmModal();
+  }
+};
+
+// 导入MIDI文件
 const handleImportMidi = () => {
-  console.log('导入MIDI文件');
-  // TODO: 实现导入MIDI文件功能
+  selectedMidiFile.value = null;
+  isDragOver.value = false;
+  showImportMidiModal.value = true;
   closeImportModal();
+};
+
+// 关闭导入MIDI文件弹窗
+const closeImportMidiModal = () => {
+  showImportMidiModal.value = false;
+  selectedMidiFile.value = null;
+  isDragOver.value = false;
+};
+
+// 触发文件选择
+const triggerFileInput = () => {
+  if (midiFileInput.value) {
+    midiFileInput.value.click();
+  }
+};
+
+// 处理文件选择
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (files && files.length > 0) {
+    selectedMidiFile.value = files[0];
+  }
+};
+
+// 处理拖拽悬停
+const handleDragOver = () => {
+  isDragOver.value = true;
+};
+
+// 处理拖拽离开
+const handleDragLeave = () => {
+  isDragOver.value = false;
+};
+
+// 处理文件拖放
+const handleDrop = (event: DragEvent) => {
+  isDragOver.value = false;
+  const files = event.dataTransfer.files;
+  if (files && files.length > 0) {
+    const file = files[0];
+    if (file.name.endsWith('.mid') || file.name.endsWith('.midi')) {
+      selectedMidiFile.value = file;
+    } else {
+      alert('请选择 .mid 或 .midi 格式的文件');
+    }
+  }
+};
+
+// 格式化文件大小
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+};
+
+// 确认导入MIDI文件
+const confirmImportMidi = () => {
+  if (!selectedMidiFile.value) {
+    alert('请选择MIDI文件');
+    return;
+  }
+
+  const file = selectedMidiFile.value;
+  const reader = new FileReader();
+
+  reader.onload = (event) => {
+    const arrayBuffer = event.target?.result as ArrayBuffer;
+    if (arrayBuffer) {
+      // TODO: 解析MIDI文件并导入到编辑器
+      console.log('MIDI文件已加载:', arrayBuffer);
+      const midi=new Midi(arrayBuffer);
+      console.log(JSON.stringify(midi.tracks));
+
+      // 这里需要调用MIDI解析库（如@tonejs/midi）解析文件
+      // 然后将数据转换为trackMap格式并导入
+
+      alert('MIDI文件导入功能待实现');
+      closeImportMidiModal();
+    }
+  };
+
+  reader.onerror = () => {
+    alert('读取MIDI文件失败');
+  };
+
+  reader.readAsArrayBuffer(file);
 };
 
 // 获取BPM值
@@ -507,17 +965,6 @@ async function saveProject(): Promise<void> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 // 用户信息管理
 const currentUser = ref<any>(null);
 
@@ -556,9 +1003,57 @@ let materialItem=document.querySelectorAll('.material-list')
     pianoWidth.value = viewportWidth - materialWidth - (isAsideClose ? asideWidth: 0)
   }
 
+  const playBtn = async () => {
+  try {
+    console.log("开始播放");
+    // 1. 等待 Tone.js 初始化
+    await Tone.start()
+    // 2. 获取 PianoRoll 组件
+    const pianoLayout = document.querySelector('.piano-layout') as any;
+    // 检查组件是否存在
+    if (!pianoLayout || !pianoLayout.trackMap) {
+      alert('编辑器未加载，请稍后重试');
+      return;
+    }
+    const trackMap = pianoLayout.trackMap;
+
+    // 3. 检查是否有内容
+    // if (trackMap.length === 0 || !trackMap.forEach(t => t.clips.length > 0)) {
+   //TODO：检查track是否有片段
+    if (trackMap.length === 0) {
+      alert('请先添加音乐片段');
+      return;
+    }
+
+    // 4. 停止之前的播放
+    Tone.getTransport().cancel()
+    Tone.getTransport().stop()
+
+    // 5. 读取 BPM（确保ID正确）
+    const bpmInput = document.querySelector('#volume') as HTMLInputElement | null
+    const bpm = bpmInput ? Number(bpmInput.value) || 120 : 120
+    Tone.getTransport().bpm.value = bpm
+    console.log(trackMap);
+
+    // 6. 逐个轨道播放
+    trackMap.forEach(item => {
+      if (item.clips && item.clips.length > 0) {
+        item.play()
+      }
+    })
+
+    console.log("播放成功");
+
+  } catch (error) {
+    console.error('播放失败:', error);
+    alert('播放失败: ' + (error as Error).message);
+  }
+}
+
   onMounted(() => {
     // 加载用户信息
     loadUserInfo();
+
 
     // 监听localStorage变化
     window.addEventListener('storage', handleStorageChange);
@@ -626,6 +1121,16 @@ let materialItem=document.querySelectorAll('.material-list')
 };
 
 observeAsideChanges();
+//TODO：token验证
+watchEffect(() => {
+  // 每次组件更新时读取最新的 state
+  const projectId = history.state.projectId
+  console.log(projectId)
+  if (projectId) {
+    loadProject(projectId)
+  }
+})
+    checkAIGeneratedMusic();
 
   });
   //卸载
@@ -738,22 +1243,6 @@ const materialTriggers=ref([
   }
 ])
 
-// watch(asideLoaded,msg=>{
-//   console.log('Aside loaded state:', msg);})
-// // 使用computed缓存监测isMaterialUnfold的值
-// // 创建一个computed属性来处理和缓存isMaterialUnfold的数据
-//   const materialUnfoldCache = computed(() => {
-//   // 在这里可以对isMaterialUnfold数组进行处理或转换
-//     console.log('computed执行 - 缓存isMaterialUnfold:', isMaterialUnfold.value);
-//   // 返回处理后的数据作为缓存
-//     materialItem=document.querySelectorAll('.material-list')
-//     return {
-//       items: [...isMaterialUnfold.value],
-//       count: isMaterialUnfold.value.length,
-//       isAnyUnfolded: isMaterialUnfold.value.length > 0
-//     };
-// })
-
 
 // 存储当前的事件处理器，以便在需要时移除
 //也就是目前material-item上的事件监测
@@ -821,6 +1310,17 @@ watch(
   },
   { deep: true }
 )
+
+function generateRandomCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 10; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// 结果：Kj5mN8 或 xP3qR9
 </script >
 
 <style scoped>
@@ -1228,5 +1728,280 @@ z-index: 999 ;
   color: #CCD0CF;
   font-size: 12px;
   font-weight: 500;
+}
+
+/* 邀请协作弹窗样式 */
+.invite-code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.invite-label {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.invite-code-display {
+  background-color: #1a2a3a;
+  border: 2px solid #2a4a5c;
+  border-radius: 8px;
+  padding: 20px 40px;
+  font-size: 28px;
+  font-weight: 600;
+  color: #4a9eff;
+  letter-spacing: 4px;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  min-width: 280px;
+}
+
+.invite-tip {
+  color: #8b9bb4;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.modal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 24px;
+  background-color: #2a4a5c;
+  border: none;
+  border-radius: 8px;
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-action-btn:hover {
+  background-color: #3a5a6c;
+  transform: translateY(-2px);
+}
+
+.modal-action-btn .btn-icon {
+  font-size: 20px;
+}
+
+.modal-action-btn .btn-text {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 加入协作弹窗样式 */
+.join-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+
+.join-label {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.join-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 16px;
+  background-color: #1a2a3a;
+  border: 2px solid #2a4a5c;
+  border-radius: 8px;
+  color: #CCD0CF;
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.join-input:focus {
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+}
+
+.join-input::placeholder {
+  color: #8b9bb4;
+  letter-spacing: normal;
+}
+
+.join-tip {
+  color: #8b9bb4;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 项目信息确认弹窗样式 */
+.project-confirm-modal {
+  max-width: 450px;
+}
+
+.project-confirm-info {
+  background-color: #1a2a3a;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.confirm-item {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.confirm-item:last-child {
+  margin-bottom: 0;
+}
+
+.confirm-label {
+  color: #8b9bb4;
+  font-size: 14px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.confirm-value {
+  color: #CCD0CF;
+  font-size: 14px;
+  flex: 1;
+  word-break: break-word;
+}
+
+.confirm-question {
+  color: #CCD0CF;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-actions .modal-action-btn {
+  flex: 1;
+  max-width: 150px;
+}
+
+.confirm-actions .modal-action-btn.secondary {
+  background-color: #253745;
+}
+
+.confirm-actions .modal-action-btn.secondary:hover {
+  background-color: #2a4a5c;
+}
+
+.confirm-actions .modal-action-btn.primary {
+  background-color: #4a9eff;
+}
+
+.confirm-actions .modal-action-btn.primary:hover {
+  background-color: #3a8eef;
+}
+
+/* 导入MIDI文件弹窗样式 */
+.midi-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.upload-zone {
+  width: 100%;
+  max-width: 400px;
+  min-height: 200px;
+  border: 2px dashed #2a4a5c;
+  border-radius: 8px;
+  background-color: #1a2a3a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: #4a9eff;
+  background-color: rgba(74, 158, 255, 0.05);
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.upload-text {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.upload-hint {
+  color: #8b9bb4;
+  font-size: 12px;
+  margin: 0;
+}
+
+.file-info {
+  width: 100%;
+  max-width: 400px;
+  background-color: #1a2a3a;
+  border: 1px solid #2a4a5c;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  color: #CCD0CF;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  word-break: break-all;
+}
+
+.file-size {
+  color: #8b9bb4;
+  font-size: 12px;
+  margin: 0;
+}
+
+.modal-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-action-btn:disabled:hover {
+  background-color: #2a4a5c;
+  transform: none;
 }
 </style>

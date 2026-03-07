@@ -9,7 +9,7 @@
             <li><router-link to="/">开始创作</router-link></li>
             <li><router-link to="/Library">和弦图书馆</router-link></li>
             <li><router-link to="/User">我的创作</router-link></li>
-            <li><a href="">AI</a></li>
+            <li><router-link to="/AI">AI作曲</router-link></li>
         </ul>
         <button ref="asideBtn" class="aside-btn close">,</button>
       </aside>
@@ -38,7 +38,7 @@ const isMobile = ref(false)
     aside.value.style.marginLeft = '0px'
     asideBtn.value.classList.replace('open', 'close')
   } else {
-    aside.value.style.marginLeft = '-280px'
+    aside.value.style.marginLeft = '-260px'
     asideBtn.value.classList.replace('close', 'open')
   }
 
@@ -67,7 +67,7 @@ function handleMediaQueryChange(mediaQuery: MediaQueryList | MediaQueryListEvent
     aside.value.className = 'aside close'
     isSidebarOpen.value = true
   } else {
-    aside.value.style.marginLeft = '-280px'
+    aside.value.style.marginLeft = '-260px'
     aside.value.className = 'aside open'
     isSidebarOpen.value = false
   }

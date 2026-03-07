@@ -40,6 +40,14 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("../../layouts/UserLayout.vue"),
     meta: { requiresAuth: true }
   },
+  {
+    path: "/AI",
+    name: "AI",
+    component: () => import("../../layouts/AIEditorLayout.vue"),
+    meta: { requiresAuth: true }
+  },
+
+
 
   // 重定向未匹配的路由到登录页
   {
