@@ -47,13 +47,17 @@ export default request
 
 
 // api/modules/user.js
-
+//
 export function register(data) {
   return request.post('/register', data)
 }
 
 export function login(data) {
   return request.post('/login', data)
+}
+
+export function updateUser(id,data) {
+  return request.post(`/updateuser/${id}`, {data})
 }
 
 // 项目相关 API
@@ -87,7 +91,7 @@ export function confirmInvitation(data) {
 }
 
 
-//TODO：将合作者信息加入项目
+//将合作者信息加入项目
 export function addCollaborator(data) {
   return request.post(`/project/invites/${data.projectId}/collaborators`, data)
 }

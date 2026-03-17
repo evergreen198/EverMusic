@@ -4,17 +4,30 @@
   </template>
 
   <script setup lang="ts">
-  import { onMounted, ref, reactive, nextTick, TrackOpTypes } from "vue";
-  import { Application,Graphics,BitmapText, BitmapFont,Container, Rectangle, log2} from "pixi.js";
+  import { onMounted, ref, reactive, nextTick} from "vue";
+  import {Application,
+          Graphics,
+          BitmapText,
+          BitmapFont,
+          Container,
+          Rectangle} from "pixi.js";
   import * as Tone from 'tone'
   // import { Midi } from '@tonejs/midi'
   import { instrumentSampleConfigs } from '@/utils/materials'
   import type { InstrumentId } from '@/utils/materials'
-  import { noteNameToMidi, midiToNoteName } from '@/utils/noteToMidi'
-import toWav from "audiobuffer-to-wav"
+  import {noteNameToMidi,
+          midiToNoteName } from '@/utils/noteToMidi'
+  import toWav from "audiobuffer-to-wav"
+  import { collaborativeEvents } from '@/utils/socketEvents'
   let fatherWidth:number = 0;
   const TRACK_TOP = 40
   const TRACK_HEIGHT = 30
+  const props = defineProps({
+  isMultiUser: {
+    type: Boolean,
+    default: false
+  }
+});
 
   // 根据和弦符号（如 C, Cm, C7, Cmaj7, Cmin7...）生成和弦音名列表（默认根音在 4 组）
   function buildChordNotes(symbol: string): string[] {
@@ -379,9 +392,11 @@ class Clip {
     //绘画
     redraw() {
     this.ev.clear()
+    this.deleteButton.clear()
+    this.setupDeleteButton()
+
     this.ev.rect(0, 0, this.itemWidth, this.itemHeight)
     this.ev.fill(0xccc)
-
     this.container.hitArea = new Rectangle(
       0,
       0,
@@ -400,13 +415,13 @@ class Clip {
     setupDeleteButton = () => {
       this.deleteButton.clear()
       this.deleteButton
-        .circle(110, 5, 8)
+        .circle(this.itemWidth-10, 5, 8)
         .fill(0xcccc)
       this.deleteButton
-        .moveTo(107, 2)
-        .lineTo(113, 8)
-        .moveTo(113, 2)
-        .lineTo(107, 8)
+        .moveTo(this.itemWidth-13, 2)
+        .lineTo(this.itemWidth-7, 8)
+        .moveTo(this.itemWidth-7, 2)
+        .lineTo(this.itemWidth-13, 8)
         .stroke({ width: 1.5, color: 0xffffff })
       this.deleteButton.visible = false
       this.deleteButton.eventMode = 'static'
@@ -479,40 +494,34 @@ class Clip {
           fontFamily:'Arial'
         }
       })
-  onMounted(
-
-
-    async () => {
-
-        const pianoLayout = document.querySelector('.piano-layout');
-  if (pianoLayout) {
-    (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
-    (pianoLayout as any).calculateSongDuration = calculateSongDuration;
-    (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
-    (pianoLayout as any).trackMap = trackMap;
-    (pianoLayout as any).exportAsWAV = exportAsWAV;
-  }
-
-
+  onMounted(async () => {
+    const pianoLayout = document.querySelector('.piano-layout');
+    if (pianoLayout) {
+      (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
+      (pianoLayout as any).calculateSongDuration = calculateSongDuration;
+      (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
+      (pianoLayout as any).trackMap = trackMap;
+      (pianoLayout as any).exportAsWAV = exportAsWAV;
+    }
 
       //挂载pixi-canvas
-      const pixiApp = new Application()
-      await pixiApp.init({
-        width: 9000,
-        height: 1600,
-        backgroundColor: 0xffffff,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      })
-      //ref
-      pianoCanvas.value=pixiApp.canvas
-      pixiApp.canvas.className='canvas-piano'
-      pixiApp.canvas.style.width=9000+'px'
-      pixiApp.canvas.style.height=1600+'px'
-      document.querySelector('.piano-layout')?.appendChild(pixiApp.canvas)
+    const pixiApp = new Application()
+    await pixiApp.init({
+      width: 9000,
+      height: 1600,
+      backgroundColor: 0xffffff,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
+    })
+    //ref
+    pianoCanvas.value=pixiApp.canvas
+    pixiApp.canvas.className='canvas-piano'
+    pixiApp.canvas.style.width=9000+'px'
+    pixiApp.canvas.style.height=1600+'px'
+    document.querySelector('.piano-layout')?.appendChild(pixiApp.canvas)
 
 
-function importTrackMapFromJSON(projectData: any): void {
+  function importTrackMapFromJSON(projectData: any): void {
   // 清空现有trackMap
   trackMap.forEach(track => {
     track.clips.forEach(clip => {
@@ -573,98 +582,91 @@ function importTrackMapFromJSON(projectData: any): void {
   }
 
   console.log('项目数据导入成功');
-}
+  }
 
-
-
-
-
-    if(pianoCanvas.value){
-    // 初始化时设置为0，而不是从marginLeft获取
-      positionState.translateX = 0;
+  if(pianoCanvas.value){
+  // 初始化时设置为0，而不是从marginLeft获取
+    positionState.translateX = 0;
+  }
+  // 使用nextsecond确保所有DOM元素都已渲染完成
+  await nextTick();
+  // 正确获取父元素 - 使用组件实例的parentElement
+  const parent = pianoCanvas.value?.parentElement?.parentElement ||
+                document.querySelector('.piano') ||
+                document.querySelector('.app-layout');
+  // 存储父元素宽度
+  fatherWidth = parent?.clientWidth || 0;
+  // 获取父元素尺寸
+  let parentWidth = 0;
+  let parentHeight = 0;
+  if (parent) {
+    parentWidth = 9000; // 保持画布宽度为9000
+    parentHeight = 1600;
+  }
+  //开始绘画
+  if( pianoCanvas.value) {
+    const musicTrackLine = new Graphics();
+    const musicTrack = new Graphics();
+    const width = pianoCanvas.value.width = parentWidth; // 设置 canvas 宽度
+    const height = pianoCanvas.value.height = parentHeight; // 设置 canvas 高度
+    if(musicTrackLine&&parent){
+      for (let i = 0; i <= (height/TRACK_HEIGHT); i++) {
+        const newTrack=new Track(i)
+        const graphics=new Graphics()
+        graphics
+        .rect(0, 70 + (i - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
+        .fill({ color:0x4a5c6a }) // Fill with red
+        .stroke({ width: 1, color: 0x5a6c7a });
+        pixiApp.stage.addChild(graphics)
+        // trackArray.push(newTrack)
+      }
+      pixiApp.stage.addChild(musicTrackLine,musicTrack)
     }
-    // 使用nextsecond确保所有DOM元素都已渲染完成
-    await nextTick();
-    // 正确获取父元素 - 使用组件实例的parentElement
-    const parent = pianoCanvas.value?.parentElement?.parentElement ||
-                  document.querySelector('.piano') ||
-                  document.querySelector('.app-layout');
-    // 存储父元素宽度
-    fatherWidth = parent?.clientWidth || 0;
-    // 获取父元素尺寸
-    let parentWidth = 0;
-    let parentHeight = 0;
-    if (parent) {
-      parentWidth = 9000; // 保持画布宽度为9000
-      parentHeight = 1600;
-    }
-
-
-    //开始绘画
-    if( pianoCanvas.value) {
-      const musicTrackLine = new Graphics();
-      const musicTrack = new Graphics();
-
-      const width = pianoCanvas.value.width = parentWidth; // 设置 canvas 宽度
-      const height = pianoCanvas.value.height = parentHeight; // 设置 canvas 高度
-      if(musicTrackLine&&parent){
-        for (let i = 0; i <= (height/TRACK_HEIGHT); i++) {
-          const newTrack=new Track(i)
-          const graphics=new Graphics()
-          graphics
-          .rect(0, 70 + (i - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
-          .fill({ color:0x4a5c6a }) // Fill with red
-          .stroke({ width: 1, color: 0x5a6c7a });
-          pixiApp.stage.addChild(graphics)
-
-          // trackArray.push(newTrack)
+    //时间导轨区域
+    const timeTrack=new Graphics()
+    const timeColumn=new Graphics()
+    const timeColumnx=new Graphics()
+    const ruler=new Container()
+    // const fontStyle = { fontName: 'Arial', fontSize: 16, tint: 0xffffff };
+    if(timeTrack&&parent){
+      timeTrack
+        .rect(0,0,width,TRACK_TOP)
+        .fill({color:0x253745})
+        for (let i = 0; i <= width; i += 30){
+          timeColumn
+            .moveTo(i,0)
+          .lineTo(i, parentHeight)
+            .stroke({width:1,alpha:0.4})
+          timeColumnx
+            .moveTo(i+6,TRACK_HEIGHT)
+            .lineTo(i+6,parentHeight)
+            .moveTo(i+12,TRACK_HEIGHT)
+            .lineTo(i+12,parentHeight)
+            .moveTo(i+18,TRACK_HEIGHT)
+            .lineTo(i+18,parentHeight)
+            .moveTo(i+24,TRACK_HEIGHT)
+            .lineTo(i+24,parentHeight)
+            .stroke({width:1,alpha:0.1})
+          const lable=new BitmapText({
+            text:`${i/30}`,
+            style:{
+              fontFamily:'myfont',
+              fontSize:8,
+              fill:0xcccccc,
+              align:'center'
+            }
+          })
+          lable.x=i+6
+          lable.y=5
+          ruler.addChild(lable)
         }
-        pixiApp.stage.addChild(musicTrackLine,musicTrack)
-      }
-      //时间导轨区域
-      const timeTrack=new Graphics()
-      const timeColumn=new Graphics()
-      const timeColumnx=new Graphics()
-      const ruler=new Container()
-      // const fontStyle = { fontName: 'Arial', fontSize: 16, tint: 0xffffff };
-
-      if(timeTrack&&parent){
-        timeTrack
-          .rect(0,0,width,TRACK_TOP)
-          .fill({color:0x253745})
-          for (let i = 0; i <= width; i += 30){
-            timeColumn
-              .moveTo(i,0)
-            .lineTo(i, parentHeight)
-
-              .stroke({width:1,alpha:0.4})
-            timeColumnx
-              .moveTo(i+6,TRACK_HEIGHT)
-              .lineTo(i+6,parentHeight)
-              .moveTo(i+12,TRACK_HEIGHT)
-              .lineTo(i+12,parentHeight)
-              .moveTo(i+18,TRACK_HEIGHT)
-              .lineTo(i+18,parentHeight)
-              .moveTo(i+24,TRACK_HEIGHT)
-              .lineTo(i+24,parentHeight)
-              .stroke({width:1,alpha:0.1})
-            const lable=new BitmapText({
-              text:`${i/30}`,
-              style:{
-                fontFamily:'myfont',
-                fontSize:8,
-                fill:0xcccccc,
-                align:'center'
-              }
-            })
-            lable.x=i+6
-            lable.y=5
-            ruler.addChild(lable)
-          }
-      }
-      pixiApp.stage.addChild(timeTrack,timeColumn,timeColumnx,ruler)
-
     }
+    pixiApp.stage.addChild(timeTrack,timeColumn,timeColumnx,ruler)
+    }
+
+    pixiApp.stage.eventMode = 'static'
+    let lastX = 0, lastY = 0;
+    //clip移动、换方向操作
     pianoCanvas.value?.addEventListener('drop',e=>{
       if(!pianoCanvas.value)return
       const itemText=e.dataTransfer?.getData('text/plain') as string
@@ -690,13 +692,12 @@ function importTrackMapFromJSON(projectData: any): void {
       } else {
         trackMap.get(trackId)?.clips.push(newClip)
       }
-      console.log(trackMap);
+      console.log('dropevent');
 
       pixiApp.stage.addChild(newClip.container)
     })
 
-    pixiApp.stage.eventMode = 'static'
-    let lastX = 0, lastY = 0;
+    //拉伸，移动
     pixiApp.stage.on('pointermove', (e) => {
       const clip = ClipInteraction.activeClip
       if (!clip||!pianoCanvas.value) return
@@ -712,8 +713,8 @@ function importTrackMapFromJSON(projectData: any): void {
         const diff = newWidth - clip.itemWidth
         clip.itemWidth = newWidth
         clip.container.x -= diff
+        clip.deleteButton.x-=diff
         clip.startsecond-=diff/30
-        // clip.durationsecond+=diff/30
         clip.durationsecond=clip.itemWidth/30
 
       }
@@ -742,49 +743,41 @@ function importTrackMapFromJSON(projectData: any): void {
       clip.redraw()
     })
 
+    //移动完成后的轨道处理
     pixiApp.stage.on('pointerup', () => {
-  if (ClipInteraction.activeClip) {
-    const clip = ClipInteraction.activeClip;
+    if (ClipInteraction.activeClip) {
+      const clip = ClipInteraction.activeClip;
+      // 计算最终轨道索引
+      const rect = pianoCanvas.value?.getBoundingClientRect();
+      if (rect) {
+        const finalTrackIndex = Math.floor(
+          (clip.container.y - TRACK_TOP) / TRACK_HEIGHT
+        );
+        // 确保轨道索引合法
+        if (finalTrackIndex >= 0 && finalTrackIndex <52&&!trackMap.get(finalTrackIndex)) {
+          // 从原轨道移除 clip
+          trackMap.forEach((track) => {
+            const index = track.clips.indexOf(clip);
+            if (index !== -1) {
+              track.clips.splice(index, 1);
+            }
+            const newTrack=new Track(finalTrackIndex)
+            newTrack.clips.push(clip)
+            trackMap.set(finalTrackIndex,newTrack)
+          });
 
-    // 计算最终轨道索引
-    const rect = pianoCanvas.value?.getBoundingClientRect();
-    if (rect) {
-      const finalTrackIndex = Math.floor(
-        (clip.container.y - TRACK_TOP) / TRACK_HEIGHT
-      );
-
-      // 确保轨道索引合法
-      if (finalTrackIndex >= 0 && finalTrackIndex <52&&!trackMap.get(finalTrackIndex)) {
-        // 从原轨道移除 clip
-        trackMap.forEach((track) => {
-          const index = track.clips.indexOf(clip);
-          if (index !== -1) {
-            track.clips.splice(index, 1);
-          }
-          const newTrack=new Track(finalTrackIndex)
-          newTrack.clips.push(clip)
-          trackMap.set(finalTrackIndex,newTrack)
-        });
-
-        console.log(`Clip moved to track ${finalTrackIndex}`);
-        console.log(trackMap);
+          console.log(`Clip moved to track ${finalTrackIndex}`);
+          console.log(trackMap);
+        }
       }
-    }
 
-    // 重置拖动状态
-    clip.resizeDir = null;
-    ClipInteraction.activeClip = null;
-  }
+      // 重置拖动状态
+      clip.resizeDir = null;
+      ClipInteraction.activeClip = null;
+    }
   lastX = 0;
   lastY = 0;
-});
-
-      // document.querySelector('.function-play')?.addEventListener('click',()=>{
-      //   trackMap.forEach(item=>{
-      //     if(item.clips.length)item.play()
-      //   })
-      // })
-
+    });
 
       }
     );

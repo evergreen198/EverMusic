@@ -1,8 +1,18 @@
 import express from 'express';
 import pool from './db.js';
 import cors from 'cors';
+import { createServer } from 'http';
+import {Server} from 'socket.io'
 // Please install OpenAI SDK first: `npm install openai`
+const app = express();
+app.use(cors());
+app.use(express.json());
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] }
+});
 
+//AI接口
 import OpenAI from "openai";
 import dotenv from 'dotenv';
 dotenv.config();
@@ -105,9 +115,7 @@ frontEighthBackSixteenth, 前八后十六 (1/8+1/16+1/16)
 // await styleToMusicParams("忧伤的钢琴曲，缓慢");
 
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+
 
 // ========== 用户相关 ==========
 
@@ -154,6 +162,27 @@ app.post('/api/register', async (req, res) => {
 });
 
 
+app.post('/api/updateuser/:id',async(req,res)=>{
+  const userId=req.params.id
+  const {username,avatar_url, email,password:password_hash , bio}=req.body
+  try{
+    const result= await pool.query(
+      `UPDATE users
+             SET username = $1,
+                 email = $2,
+                 password_hash = $3,
+                 avatar_url = $4::jsonb,
+                 bio = $5
+             WHERE id = $6
+             RETURNING *`,
+      [username,email,password_hash,avatar_url,bio,userId]
+    )
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+
+})
 // ========== 项目相关 ==========
 // 查询当前登录用户的项目列表
 app.get('/api/projects_list', async (req, res) => {
@@ -392,8 +421,29 @@ app.post('/api/generate-music', async (req, res) => {
   }
 });
 
+
+//=======Socket.io=========
+io.on('connection', (socket) => {
+  console.log('用户连接:', socket.id);
+
+  // TODO加入项目房间
+  socket.on('join-project', (projectId) => {
+    socket.join(`project-${projectId}`);
+    console.log(`用户加入项目 ${projectId}`);
+  });
+
+  // TODO实时编辑同步
+  socket.on('edit-clip', (projectId, clipData) => {
+    io.to(`project-${projectId}`).emit('clip-updated', clipData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('用户断开连接:', socket.id);
+  });
+});
 // 启动服务
 const PORT = 7220;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`API服务器运行在 http://localhost:${PORT}`);
+  console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });
