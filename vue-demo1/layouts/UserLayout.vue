@@ -776,6 +776,8 @@ const handleLoadProject = (projectId: number) => {
 
 .User {
   min-height: 100vh;
+  max-height: 100vh;
+
   min-width: 100vw;
   display: flex;
   background-color: #f5f5f5;
@@ -783,8 +785,12 @@ const handleLoadProject = (projectId: number) => {
 
 .right {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
   overflow-y: auto;
+  max-height: 100vh;
+
 }
 
 /* 用户信息卡片 */
@@ -861,6 +867,8 @@ const handleLoadProject = (projectId: number) => {
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-height: 100%;
+  overflow: auto;
 }
 
 .works-title {

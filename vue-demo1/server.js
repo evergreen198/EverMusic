@@ -2,13 +2,13 @@ import express from 'express';
 import pool from './db.js';
 import cors from 'cors';
 import { createServer } from 'http';
-import {Server} from 'socket.io'
+import { Server } from 'socket.io'
 // Please install OpenAI SDK first: `npm install openai`
 const app = express();
 app.use(cors());
 app.use(express.json());
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] }
 });
 
@@ -17,9 +17,9 @@ import OpenAI from "openai";
 import dotenv from 'dotenv';
 dotenv.config();
 const openai = new OpenAI({
-        baseURL: 'https://api.deepseek.com',
-        apiKey: process.env.DEEPSEEK_API_KEY,
-        // "sk-77394cf256604205baf53b20d4e63be3",
+  baseURL: 'https://api.deepseek.com',
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  // "sk-77394cf256604205baf53b20d4e63be3",
 });
 
 async function styleToMusicParams(styleDescription) {
@@ -111,12 +111,6 @@ frontEighthBackSixteenth, 前八后十六 (1/8+1/16+1/16)
   }
 }
 
-// 使用示例
-// await styleToMusicParams("忧伤的钢琴曲，缓慢");
-
-
-
-
 // ========== 用户相关 ==========
 
 // 根据邮箱或用户名查询用户（用于登录）
@@ -161,12 +155,11 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-
-app.post('/api/updateuser/:id',async(req,res)=>{
-  const userId=req.params.id
-  const {username,avatar_url, email,password:password_hash , bio}=req.body
-  try{
-    const result= await pool.query(
+app.post('/api/updateuser/:id', async (req, res) => {
+  const userId = req.params.id
+  const { username, avatar_url, email, password: password_hash, bio } = req.body
+  try {
+    const result = await pool.query(
       `UPDATE users
              SET username = $1,
                  email = $2,
@@ -175,7 +168,7 @@ app.post('/api/updateuser/:id',async(req,res)=>{
                  bio = $5
              WHERE id = $6
              RETURNING *`,
-      [username,email,password_hash,avatar_url,bio,userId]
+      [username, email, password_hash, avatar_url, bio, userId]
     )
     res.status(200).json(result.rows[0]);
   } catch (err) {
@@ -367,7 +360,7 @@ app.get('/api/project/invites/confirm', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT * FROM project_invites WHERE invite_code = $1`,
-      [ inviteCode]
+      [inviteCode]
     );
 
     if (result.rows.length === 0) {
@@ -392,7 +385,7 @@ app.get('/api/project/invites/confirm', async (req, res) => {
 
 // 添加合作者
 app.post(`/api/project/invites/:id/collaborators`, async (req, res) => {
-  const { id:projectId } = req.params;
+  const { id: projectId } = req.params;
   const { user_id, role, permissions } = req.body;
   try {
     const result = await pool.query(
@@ -426,21 +419,55 @@ app.post('/api/generate-music', async (req, res) => {
 io.on('connection', (socket) => {
   console.log('用户连接:', socket.id);
 
-  // TODO加入项目房间
-  socket.on('join-project', (projectId) => {
+
+  //主机项目->加入房间
+  socket.on('host-project', (projectId) => {
     socket.join(`project-${projectId}`);
-    console.log(`用户加入项目 ${projectId}`);
+    console.log(`主机项目加入项目 ${projectId}`);
   });
 
-  // TODO实时编辑同步
-  socket.on('edit-clip', (projectId, clipData) => {
-    io.to(`project-${projectId}`).emit('clip-updated', clipData);
+  //加入邀请->加入房间
+  socket.on('join-project', (projectId, userdata) => {
+    socket.join(`project-${projectId}`);
+    //传输用户数据
+    io.to(`project-${projectId}`).emit('user-joined', userdata)
+    console.log(`用户加入项目 ${projectId}, 用户数据:`, userdata);
   });
 
-  socket.on('disconnect', () => {
-    console.log('用户断开连接:', socket.id);
+  // 实时编辑同步
+  socket.on('remote-edit-clip', (projectId, clipData) => {
+    socket.to(`project-${projectId}`).emit('clip-updated', {
+      type: clipData.operation.type,
+      ...clipData.operation
+    });
   });
+
+  // 添加片段
+  socket.on('remote-add-clip', (projectId, clipData) => {
+    console.log('发送远程添加片段:', projectId, clipData);
+    socket.to(`project-${projectId}`).emit('clip-added', {
+      type: 'add',
+      clip: clipData.clip,
+      trackId: clipData.clip.track_id
+    });
+  });
+
+  // 删除片段
+  socket.on('remote-delete-clip', (projectId, clipData) => {
+    console.log('发送远程删除片段:', projectId, clipData);
+    socket.to(`project-${projectId}`).emit('clip-deleted', {
+      type: 'delete',
+      trackId: clipData.trackId,
+      clipId: clipData.clipId
+    });
+  });
+
+
+
+
 });
+
+
 // 启动服务
 const PORT = 7220;
 httpServer.listen(PORT, () => {

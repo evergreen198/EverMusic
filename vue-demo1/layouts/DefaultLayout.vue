@@ -226,8 +226,14 @@
       <div class="main">
         <nav class="nav">
             <div class="nav-info">
-              <input id="title" type="text" placeholder="标题">
-              <input id="brief" type="text" placeholder="简介">
+              <div class="editable-field">
+                <span v-if="!isEditingTitle" @click="isEditingTitle = true" class="field-text title-text">{{ projectTitle || '点击输入标题' }}</span>
+                <input v-else id="title" v-model="projectTitle" type="text" placeholder="标题" @blur="isEditingTitle = false" @keyup.enter="isEditingTitle = false" ref="titleInput">
+              </div>
+              <div class="editable-field">
+                <span v-if="!isEditingBrief" @click="isEditingBrief = true" class="field-text brief-text">{{ projectBrief || '点击输入简介' }}</span>
+                <input v-else id="brief" v-model="projectBrief" type="text" placeholder="简介" @blur="isEditingBrief = false" @keyup.enter="isEditingBrief = false" ref="briefInput">
+              </div>
             </div>
             <div class="co-editer">
               <div><span>正在编辑：</span></div>
@@ -257,7 +263,7 @@
         </nav>
           <section class="piano" :style="{'width':pianoWidth+'px'}">
       <!--canvas钢琴卷帘-->
-            <PianoRoll v-if="asideLoaded" class="canvas-piano" :style="{width:'100%'}"></PianoRoll>
+            <PianoRoll v-if="asideLoaded" class="canvas-piano" :style="{width:'100%'}" :isMultiUser="isMultiUserProject" :projectId="currentProjectId"></PianoRoll>
             <!-- 子路由内容 -->
             <!-- <router-view v-if="asideLoaded" class="sub-content"></router-view> -->
           </section>
@@ -286,20 +292,20 @@
       </div>
       <section class="material">
         <div class="tone">
-          <!-- 使用computed缓存示例 -->
-          <div style="font-size: 1.2vh; padding: 0.5vh; text-align: center;">
-            <!-- 展开项: {{ materialUnfoldCache.count }} -->
-             乐器：
-             <select name="instrument" id="instrument">
-            <option value="piano">钢琴</option>
-             <option value="guitar">吉他</option>
-             <option value="bass">贝斯</option>
-             <option value="drum">鼓</option>
-             <option value="string">弦乐</option>
-             <option value="管乐">管乐</option>
-             <option value="打击乐">打击乐</option>
-             </select>
-            <!-- {{ materialUnfoldCache.isAnyUnfolded ? '有展开项' : '全部折叠' }} -->
+          <div class="select-wrapper">
+            <label class="select-label">乐器</label>
+            <div class="custom-select">
+              <select name="instrument" id="instrument">
+                <option value="piano">钢琴</option>
+                <option value="guitar">吉他</option>
+                <option value="bass">贝斯</option>
+                <option value="drum">鼓</option>
+                <option value="string">弦乐</option>
+                <option value="管乐">管乐</option>
+                <option value="打击乐">打击乐</option>
+              </select>
+              <span class="select-arrow">▼</span>
+            </div>
           </div>
         </div>
 
@@ -327,29 +333,28 @@
          </div>
         </div>
         <footer class="mode">
-          节奏：
-          <select name="tempo" id="tempo">
-            <option value="whole">全音符 1/1</option>
-          <option value="half">二分音符 1/2</option>
-          <option value="quarter">四分音符 1/4</option>
-          <option value="eighth">八分音符 1/8</option>
-          <option value="sixteenth">十六分音符 1/16</option>
-
-          <option value="dottedhalf">附点二分音符 1/2+1/4</option>
-          <option value="dottedquarter">附点四分音符 1/4+1/8</option>
-
-            <option value="dottedeighthnote">小附点 1/8+1/8+1/16</option>
-            <option value="dottedquarternote">大附点 1/4+1/4+1/8</option>
-
-          <option value="syncopationLarge">大切分 1/8+1/4+1/8</option>
-          <option value="syncopationSmall">小切分 1/16+1/8+1/16</option>
-
-          <option value="eighthTriplet">八分三连音 1/12+1/12+1/12</option>
-
-          <option value="frontEighthBackSixteenth">前八后十六 1/8+1/16+1/16</option>
-          <option value="frontSixteenthBackEighth">前十六后八 1/16+1/16+1/8</option>
-
-          </select>
+          <div class="select-wrapper">
+            <label class="select-label">节奏</label>
+            <div class="custom-select">
+              <select name="tempo" id="tempo">
+                <option value="whole">全音符 1/1</option>
+                <option value="half">二分音符 1/2</option>
+                <option value="quarter">四分音符 1/4</option>
+                <option value="eighth">八分音符 1/8</option>
+                <option value="sixteenth">十六分音符 1/16</option>
+                <option value="dottedhalf">附点二分音符 1/2+1/4</option>
+                <option value="dottedquarter">附点四分音符 1/4+1/8</option>
+                <option value="dottedeighthnote">小附点 1/8+1/8+1/16</option>
+                <option value="dottedquarternote">大附点 1/4+1/4+1/8</option>
+                <option value="syncopationLarge">大切分 1/8+1/4+1/8</option>
+                <option value="syncopationSmall">小切分 1/16+1/8+1/16</option>
+                <option value="eighthTriplet">八分三连音 1/12+1/12+1/12</option>
+                <option value="frontEighthBackSixteenth">前八后十六 1/8+1/16+1/16</option>
+                <option value="frontSixteenthBackEighth">前十六后八 1/16+1/16+1/8</option>
+              </select>
+              <span class="select-arrow">▼</span>
+            </div>
+          </div>
         </footer>
       </section>
     </section>
@@ -362,7 +367,7 @@ import PianoRoll from '../src/components/PianoRoll.vue';
 import Aside from '../src/components/Aside.vue'
 import BpmSlider from '@/components/BpmSlider.vue';
 
-import { ref, watch, onMounted, onUnmounted,watchEffect } from 'vue'
+import { ref, watch, onMounted, onUnmounted,watchEffect,computed,nextTick } from 'vue'
 import  { StartPlay } from '@/data/musicMaterials';
 import { Midi } from '@tonejs/midi';
 import * as Tone from "tone"
@@ -372,32 +377,31 @@ import {createProject,updateProject,
         addCollaborator } from '../src/utils/api.js';
 import router from '@/router/index.js';
 import socket from '@/utils/socket.ts';
-import {registerSocketListeners,
-        unregisterSocketListeners,
-        collaborativeEvents} from '@/utils/socketEvents.ts'
-
 
 //协作状态：是否多人
-const isMultiUserProject = ref(false);
-const collaborators = ref<any[]>([]);
-
+const collaborators = ref<unknown[]>([]);
 // 项目保存相关
 const currentProjectId = ref<number | null>(null);
 const projectVersion = ref<number>(1);
 const bpmValue = ref<number>(120);
 
-// 访问trackMap
+// 项目标题和简介编辑状态
+const projectTitle = ref<string>('');
+const projectBrief = ref<string>('');
+const isEditingTitle = ref<boolean>(false);
+const isEditingBrief = ref<boolean>(false);
+const titleInput = ref<HTMLInputElement | null>(null);
+const briefInput = ref<HTMLInputElement | null>(null);
 
+// 访问trackMap
 // 导入作品弹窗控制
 const showImportModal = ref<boolean>(false);
 
 // 历史作品弹窗控制
 const showHistoryModal = ref<boolean>(false);
-const projectList = ref<any[]>([]);
+const projectList = ref<unknown[]>([]);
 const loadingHistory = ref<boolean>(false);
 const historyError = ref<string>('');
-
-
 
 // 导出作品弹窗控制
 const showExportModal = ref<boolean>(false);
@@ -412,7 +416,7 @@ const inviteCodeInput = ref<string>('');
 
 // 项目信息确认弹窗控制
 const showProjectConfirmModal = ref<boolean>(false);
-const pendingProjectInfo = ref<any>({});
+const pendingProjectInfo = ref<unknown>({});
 const pendingProjectId = ref<number | null>(null);
 
 // 导入MIDI文件弹窗控制
@@ -420,6 +424,12 @@ const showImportMidiModal = ref<boolean>(false);
 const selectedMidiFile = ref<File | null>(null);
 const isDragOver = ref<boolean>(false);
 const midiFileInput = ref<HTMLInputElement | null>(null);
+
+//computed isMultiUserProject的值取决于collaborators.value长度是否大于1
+const isMultiUserProject = computed(() => {
+  return collaborators.value.length > 1;
+});
+
 
 // 打开导出作品弹窗
 const openExportModal = () => {
@@ -466,7 +476,10 @@ async function openInviteModal() {
 
   sendInvitaion(inviteData)
   showInviteModal.value = true;
+  socket.emit('host-project',currentProjectId.value)
 };
+
+
 
 // 关闭邀请协作弹窗
 const closeInviteModal = () => {
@@ -528,7 +541,7 @@ const handleExportMidi = () => {
 
   midi.header.setTempo(bpmValue.value)
 
-  trackMap.forEach((track)=>{
+  trackMap.forEach((track:any)=>{
     const midiTrack=midi.addTrack()
     midiTrack.channel=track.midiChannel
     //TODO:乐器分轨道
@@ -748,7 +761,8 @@ const confirmJoinCollaboration = () => {
         alert(response.error);
         return;
       }
-      // 获取项目信息
+      //加入项目房间，并提供自己的数据
+      socket.emit('join-project', response.project_id,collaborators.value[0]);
       getProject(response.project_id)
         .then(projectResponse => {
           const projectData = projectResponse.data || projectResponse;
@@ -956,18 +970,15 @@ async function saveProject(): Promise<void> {
   try {
     // 创建保存数据
     const data = createProjectSaveData();
-
     // 验证必要字段
     if (!data.creator_id) {
       alert('请先登录后再保存项目');
       return;
     }
-
     if (!data.title) {
       alert('请输入项目标题');
       return;
     }
-
     // 调用后端API保存项目
     let response;
     if (currentProjectId.value) {
@@ -984,9 +995,9 @@ async function saveProject(): Promise<void> {
       // 保存新项目ID
       if (response.data && response.data.id) {
         currentProjectId.value = response.data.id;
-        if (isMultiUserProject.value) {
-          initializeCollaborativeMode();
-        }
+        // if (isMultiUserProject.value) {
+        //   initializeCollaborativeMode();
+        // }
       }
     }
 
@@ -998,9 +1009,6 @@ async function saveProject(): Promise<void> {
     alert('保存项目失败，请重试');
   }
 }
-
-
-
 
 // 用户信息管理
 const currentUser = ref<any>(null);
@@ -1038,6 +1046,8 @@ let materialItem=document.querySelectorAll('.material-list')
     const materialWidth = materialElement ? materialElement.offsetWidth : 0
     const isAsideClose=document.querySelector('.aside-btn')?.classList.contains('close')
     pianoWidth.value = viewportWidth - materialWidth - (isAsideClose ? asideWidth: 0)
+console.log('hello');
+
   }
   const playBtn = async () => {
   try {
@@ -1085,13 +1095,34 @@ let materialItem=document.querySelectorAll('.material-list')
   }
 }
 
+  // 监听编辑状态变化，自动聚焦输入框
+  watch(isEditingTitle, async (newValue) => {
+    if (newValue) {
+      await nextTick();
+      titleInput.value?.focus();
+    }
+  });
+
+  watch(isEditingBrief, async (newValue) => {
+    if (newValue) {
+      await nextTick();
+      briefInput.value?.focus();
+    }
+  });
+
   onMounted(() => {
     // 加载用户信息
     loadUserInfo();
+    collaborators.value.push({
+      id: currentUser.value.id||null,
+      name: currentUser.value?.username || null,
+      avatar_url: currentUser.value?.avatar_url || null,
+      socketId: socket.id||null,
+    })
     // 加入项目
     //是不是多人
     if (isMultiUserProject.value && currentProjectId.value) {
-    initializeCollaborativeMode();
+    // initializeCollaborativeMode();
   }
     // 监听localStorage变化
     window.addEventListener('storage', handleStorageChange);
@@ -1118,8 +1149,6 @@ let materialItem=document.querySelectorAll('.material-list')
       e.preventDefault()
     })
     calculatePianoWidth(); // 初加载计算钢琴边框
-    // const lastOuterWidth=window.outerWidth
-    // const lastOuterHeight=window.outerHeight
     window.addEventListener('resize',calculatePianoWidth);
     // 添加侧边栏展开/收起的点击事件监听
     // const setupAsideButtonListener = () => {
@@ -1170,7 +1199,9 @@ watchEffect(() => {
 })
     checkAIGeneratedMusic();
 
-  });
+    }
+);
+
   //卸载
 onUnmounted(() => {
   // 清理事件监听，防止内存泄漏
@@ -1184,6 +1215,7 @@ onUnmounted(() => {
   // 清理materialItem的事件监听器
   cleanupMaterialItemEventListeners();
 });
+
 //素材库双击展开关闭函数
 function handleSwitchUnfold(materialId:number){
   const index = isMaterialUnfold.value.indexOf(materialId as never)
@@ -1281,7 +1313,6 @@ const materialTriggers=ref([
   }
 ])
 
-
 // 存储当前的事件处理器，以便在需要时移除
 //也就是目前material-item上的事件监测
 const eventHandlers = new WeakMap();
@@ -1357,21 +1388,33 @@ function generateRandomCode() {
   }
   return result;
 }
-function initializeCollaborativeMode() {
-  if (!currentProjectId.value) return;
 
-  // 加入项目房间
-  collaborativeEvents.joinProject(currentProjectId.value);
+//TODO：监测用户加入退出
+// function initializeCollaborativeMode() {
+//   if (!currentProjectId.value) return;
+//   // 加入项目房间
+//   collaborativeEvents.joinProject(currentProjectId.value);
+//   // 注册事件回调
+//   registerSocketListeners({
+//     onClipUpdated: handleRemoteClipUpdate,
+//     onClipAdded: handleRemoteClipAdd,
+//     onClipDeleted: handleRemoteClipDelete,
+//     onUserJoined: handleUserJoined,
+//     onUserLeft: handleUserLeft
+//   });
+// }
 
-  // 注册事件回调
-  registerSocketListeners({
-    onClipUpdated: handleRemoteClipUpdate,
-    onClipAdded: handleRemoteClipAdd,
-    onClipDeleted: handleRemoteClipDelete,
-    onUserJoined: handleUserJoined,
-    onUserLeft: handleUserLeft
-  });
-}
+socket.on('user-joined', (data: any) => {
+  collaborators.value.push(data);
+  // console.log(collaborators.value);
+  console.log(`用户 ${data.name} 加入项目`);
+});
+
+socket.on('disconnect', () => {
+    console.log('用户断开连接:', socket.id);
+    collaborators.value=collaborators.value.filter(u=>u.socketId!==socket.id)
+});
+
 function handleRemoteClipUpdate(data: any) {
   const pianoLayout = document.querySelector('.piano-layout') as any;
   if (pianoLayout && pianoLayout.trackMap) {
@@ -1385,7 +1428,6 @@ function handleRemoteClipUpdate(data: any) {
     }
   }
 }
-
 /**
  * 处理远程片段添加
  */
@@ -1399,7 +1441,6 @@ function handleRemoteClipAdd(data: any) {
     }
   }
 }
-
 /**
  * 处理远程片段删除
  */
@@ -1413,7 +1454,6 @@ function handleRemoteClipDelete(data: any) {
     }
   }
 }
-
 /**
  * 处理用户加入
  */
@@ -1421,7 +1461,6 @@ function handleUserJoined(data: any) {
   collaborators.value.push(data.user);
   console.log(`用户 ${data.user.username} 加入项目`);
 }
-
 /**
  * 处理用户离开
  */
@@ -1429,6 +1468,7 @@ function handleUserLeft(data: any) {
   collaborators.value = collaborators.value.filter(u => u.id !== data.userId);
   console.log(`用户 ${data.userId} 离开项目`);
 }
+
 </script >
 
 <style scoped>
@@ -1452,7 +1492,7 @@ display: flex;
 
 .function{
   display: inline-block;
-  height: 6vh; /* 固定高度 */
+  height: 100px; /* 固定高度 */
   position: relative; /* 确保定位稳定 */
   transform: scale(1); /* 防止缩放 */
   transform-origin: bottom left; /* 缩放原点 */
@@ -1608,7 +1648,137 @@ i::before{
 }
 .nav-info{
     float: left;
-    width: 200px;
+    width: 220px;
+}
+
+.editable-field{
+  margin-bottom: 8px;
+}
+
+.field-text{
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #9fb2c1;
+  font-size: 14px;
+}
+
+.field-text:hover{
+  background-color: #253745;
+  color: #ffffff;
+}
+
+.title-text{
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.brief-text{
+  font-size: 14px;
+  color: #9fb2c1;
+}
+
+.nav-info input{
+  width: 180px;
+  padding: 6px 12px;
+  border: 1px solid #2a4a5c;
+  border-radius: 4px;
+  background-color: #253745;
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.nav-info input:focus{
+  border-color: #9fb2c1;
+  background-color: #1a2d3d;
+}
+
+.nav-info input#title{
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.nav-info input#brief{
+  font-size: 14px;
+}
+
+/* 自定义下拉框样式 */
+.select-wrapper{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1vh 0.5vh;
+}
+
+.select-label{
+  font-size: 1.2vh;
+  color: #9fb2c1;
+  margin-bottom: 0.5vh;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.custom-select{
+  position: relative;
+  display: inline-block;
+}
+
+.custom-select select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 0.8vh 2.5vh 0.8vh 1vh;
+  font-size: 1.3vh;
+  border: 1px solid #2a4a5c;
+  border-radius: 6px;
+  background-color: #253745;
+  color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.custom-select select:hover{
+  background-color: #2a4a5c;
+  border-color: #9fb2c1;
+}
+
+.custom-select select:focus{
+  background-color: #1a2d3d;
+  border-color: #9fb2c1;
+  box-shadow: 0 0 0 2px rgba(159, 178, 193, 0.2);
+}
+
+.select-arrow{
+  position: absolute;
+  right: 0.8vh;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9fb2c1;
+  font-size: 0.8vh;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+.custom-select:hover .select-arrow{
+  color: #ffffff;
+}
+
+.custom-select select:focus + .select-arrow{
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* 下拉选项样式 */
+.custom-select select option{
+  background-color: #253745;
+  color: #ffffff;
+  padding: 0.5vh;
 }
 
 .co-editer{
