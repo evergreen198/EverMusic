@@ -155,6 +155,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// 更新用户信息
 app.post('/api/updateuser/:id', async (req, res) => {
   const userId = req.params.id
   const { username, avatar_url, email, password: password_hash, bio } = req.body
@@ -192,13 +193,23 @@ app.get('/api/projects_list', async (req, res) => {
                 p.id,
                 p.title,
                 p.creator_id,
-                p.bpm,
                 p.duration_second,
                 p.updated_at,
                 p.last_edited_by
             FROM projects p
             WHERE p.creator_id = $1
-            ORDER BY p.updated_at DESC
+            UNION
+            SELECT
+                p.id,
+                p.title,
+                p.creator_id,
+                p.duration_second,
+                p.updated_at,
+                p.last_edited_by
+            FROM projects p
+            JOIN project_collaborators pc ON p.id = pc.project_id
+            WHERE pc.user_id = $1
+            ORDER BY updated_at DESC
         `, [userId]);
     res.json(result.rows);
   } catch (err) {
@@ -208,7 +219,6 @@ app.get('/api/projects_list', async (req, res) => {
 });
 
 // 获取单个项目（返回完整project_data）
-// 查询单个项目详细信息（包含所有字段）
 app.get('/api/projects_data/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -386,16 +396,17 @@ app.get('/api/project/invites/confirm', async (req, res) => {
 // 添加合作者
 app.post(`/api/project/invites/:id/collaborators`, async (req, res) => {
   const { id: projectId } = req.params;
-  const { user_id, role, permissions } = req.body;
+  const { user_id, role, permissions, title, duration_second } = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO project_collaborators (project_id, user_id, role, permissions)
-             VALUES ($1, $2, $3, $4)
+      `INSERT INTO project_collaborators (project_id, user_id, role, permissions,title,duration_second,updated_at)
+             VALUES ($1, $2, $3, $4,$5,$6,CURRENT_TIMESTAMP)
              RETURNING *`,
-      [projectId, user_id, role, JSON.stringify(permissions || {})]
+      [projectId, user_id, role, JSON.stringify(permissions), title, duration_second]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    console.error('添加合作者失败:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -418,7 +429,6 @@ app.post('/api/generate-music', async (req, res) => {
 //=======Socket.io=========
 io.on('connection', (socket) => {
   console.log('用户连接:', socket.id);
-
 
   //主机项目->加入房间
   socket.on('host-project', (projectId) => {
@@ -462,6 +472,30 @@ io.on('connection', (socket) => {
     });
   });
 
+  // 编辑项目标题
+  socket.on('remote-edit-title', (projectId, titleData) => {
+    console.log('发送远程编辑项目标题:', projectId, titleData);
+    socket.to(`project-${projectId}`).emit('title-updated', {
+      type: 'title',
+      title: titleData.title
+    });
+  });
+  // 编辑项目描述
+  socket.on('remote-edit-description', (projectId, descriptionData) => {
+    console.log('发送远程编辑项目描述:', projectId, descriptionData);
+    socket.to(`project-${projectId}`).emit('description-updated', {
+      type: 'description',
+      description: descriptionData.description
+    });
+  });
+  // 编辑项目速度
+  socket.on('remote-edit-bpm', (projectId, bpmData) => {
+    console.log('发送远程编辑项目速度:', projectId, bpmData);
+    socket.to(`project-${projectId}`).emit('bpm-updated', {
+      type: 'bpm',
+      bpm: bpmData.bpm
+    });
+  });
 
 
 

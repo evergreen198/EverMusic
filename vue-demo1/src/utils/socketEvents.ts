@@ -49,11 +49,46 @@ export const collaborativeEvents = {
       timestamp: Date.now()
     });
   },
+
 };
 
+export const collaborativeEventsDefault = {
+  // 编辑项目标题
+  editTitle: (projectId: number, title: string) => {
+    socket.emit('remote-edit-title', projectId, {
+      projectId,
+      userId: getCurrentUserId(),
+      title,
+      timestamp: Date.now()
+    });
+  },
+  // 编辑项目描述
+  editDescription: (projectId: number, description: string) => {
+    socket.emit('remote-edit-description', projectId, {
+      projectId,
+      userId: getCurrentUserId(),
+      description,
+      timestamp: Date.now()
+    });
+  }
+
+}
+
+export const collaborativeEventsBpmSlider = {
+  // 编辑项目速度
+  editBpm: (projectId: number, bpm: number) => {
+    console.log('像后端发送远程编辑项目速度:', bpm);
+    socket.emit('remote-edit-bpm', projectId, {
+      projectId,
+      userId: getCurrentUserId(),
+      bpm,
+      timestamp: Date.now()
+    });
+  }
+}
 /**
- * 注册所有 Socket.IO 监听事件
- */
+ * 注册所有 Socket.IO 监听事件——远程监听
+ٍٍ */
 export function registerSocketListeners(callbacks: {
   onClipUpdated: (data: unknown) => void;
   onClipAdded: (data: unknown) => void;
@@ -99,7 +134,34 @@ export function registerSocketListeners(callbacks: {
     callbacks.onUserLeft(data);
   });
 }
+export function registerSocketListenersDefault(callbacks: {
+  onTitleUpdated: (data: unknown) => void;
+  onDescriptionUpdated: (data: unknown) => void;
 
+}) {
+  // 监听项目标题更新
+  socket.on('title-updated', (data) => {
+    console.log('收到项目标题更新:', data);
+    callbacks.onTitleUpdated(data);
+  });
+
+  // 监听项目描述更新
+  socket.on('description-updated', (data) => {
+    console.log('收到项目描述更新:', data);
+    callbacks.onDescriptionUpdated(data);
+  });
+
+
+}
+export function registerSocketListenersBpmSlider(callbacks: {
+  onBpmUpdated: (data: unknown) => void;
+}) {
+  // 监听项目速度更新
+  socket.on('bpm-updated', (data) => {
+    console.log('从远处收到项目速度更新:', data);
+    callbacks.onBpmUpdated(data);
+  });
+}
 /**
  * 清理所有 Socket.IO 监听事件
  */
@@ -110,8 +172,18 @@ export function unregisterSocketListeners() {
   socket.off('user-edit');
   socket.off('user-joined');
   socket.off('user-left');
+  socket.off('title-updated');
+  socket.off('description-updated');
+  socket.off('bpm-updated');
 }
 
+export function unregisterSocketListenersDefault() {
+  socket.off('title-updated');
+  socket.off('description-updated');
+}
+export function unregisterSocketListenersBpmSlider() {
+  socket.off('bpm-updated');
+}
 /**
  * 获取当前用户ID
  */

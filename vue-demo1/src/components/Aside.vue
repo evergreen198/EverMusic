@@ -5,13 +5,17 @@
               <img src="" alt="">
            </div>
            <ul>
-            <li><a href="">云音乐</a></li>
             <li><router-link to="/">开始创作</router-link></li>
-            <li><router-link to="/Library">和弦图书馆</router-link></li>
             <li><router-link to="/User">我的创作</router-link></li>
             <li><router-link to="/AI">AI作曲</router-link></li>
         </ul>
-        <button ref="asideBtn" class="aside-btn close">,</button>
+        <button
+          ref="asideBtn"
+          class="aside-btn close"
+          :aria-label="isSidebarOpen ? '收起侧边栏' : '展开侧边栏'"
+        >
+          <span class="chevron" :class="isSidebarOpen ? 'left' : 'right'" aria-hidden="true"></span>
+        </button>
       </aside>
 
     </div>
@@ -79,7 +83,7 @@ function handleMediaQueryChange(mediaQuery: MediaQueryList | MediaQueryListEvent
   const handleTransitionEnd = () => {
     aside.value?.removeEventListener('transitionend', handleTransitionEnd)
     // 过渡结束后设置transition为none
-    aside.value.style.transition = 'none'
+    aside.value!.style.transition = 'none'
   }
   aside.value?.addEventListener('transitionend', handleTransitionEnd, { once: true })
 }
@@ -112,45 +116,110 @@ onUnmounted(() => {
 aside{
   display: inline-block flex;
   width: 260px;
-  min-width: 260px;
+  min-width: 0px;
   max-width: 260px;
   height: 100vh;
   min-height: 100vh;
   max-height: 100vh;
   margin-left:0px ;
-  background-color:#11212D;
+  background-color:#0e0e0e;
+  border-right: solid #ccc 1.5px ;
   position: relative;
   transform: scale(1);
   transform-origin: top left;
   z-index: 1000;
-  transition: none; /* 默认不设置过渡效果，由JavaScript控制 */
+  transition: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 .icon-img{
     height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+aside ul{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+aside ul li{
+    padding: 0;
+    margin: 0;
 }
 aside a{
-    display: inline-block;
+    display: block;
     position: relative;
-    color: aliceblue;
-    font-weight: 250;
+    color: #909091;
+    font-weight:3400;
     font-size: 28px;
     margin: 15px 0 5px 25px;
-
+    text-decoration: none;
+    transition: all 0.3s ease;
+    padding: 12px 25px;
+    margin: 5px 0;
 }
+
+aside a:hover{
+    color: #e2e8f0;
+    background-color: rgba(255,255,255,0.05);
+}
+
+aside a.router-link-active{
+    color: #e2e8f0;
+    background-color: rgba(255,255,255,0.08);
+    border-left: 3px solid #64748b;
+}
+
 .aside-btn{
     position: relative;
     top:0;
-    left:225px;
+    left:230px;
     cursor: pointer;
     height: 60px;
     width: 60px;
     border: none;
-    border-radius: 99%;
-    z-index: 1000; /* 确保在最上层 */
-    background-color: #9fb2c1; /* 确保可见性 */
+    border-radius: 50%;
+    z-index: 1000;
+    background-color: rgba(255,255,255,0.1);
+    color: #e2e8f0;
+    font-size: 24px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aside-btn:hover{
+    background-color: rgba(255,255,255,0.15);
+    transform: scale(1.05);
+}
+
+.aside-btn:active{
+    transform: scale(0.95);
+}
+
+.chevron{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-right: 2.5px solid currentColor;
+    border-bottom: 2.5px solid currentColor;
+    transition: transform 0.25s ease;
+    transform: translate(-50%, -50%);
+}
+
+.chevron.left{
+    transform: translate(-50%, -50%) rotate(135deg);
+}
+
+.chevron.right{
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 aside ul li:hover{
-    background-color:#253745;
+    background-color: transparent;
     cursor: pointer;
 }</style>

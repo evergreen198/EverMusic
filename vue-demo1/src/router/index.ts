@@ -28,12 +28,7 @@ const routes: Array<RouteRecordRaw> = [
   },
 
   // 其他需要登录的路由
-  {
-    path: "/library",
-    name: "Library",
-    component: () => import("../../layouts/LibraryLayout.vue"),
-    meta: { requiresAuth: true }
-  },
+
   {
     path: "/user",
     name: "User",

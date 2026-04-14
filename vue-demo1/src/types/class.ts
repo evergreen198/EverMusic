@@ -11,7 +11,6 @@ import {
   midiToNoteName
 } from '@/utils/noteToMidi'
 import type { InstrumentId } from '@/utils/materials'
-import type { ClipOperation, TrackOperation } from '@/types/operation.ts'
 // const TRACK_TOP = 40
 const TRACK_HEIGHT = 30
 
@@ -325,7 +324,8 @@ export class Clip {
     this.setupDeleteButton()
 
     this.ev.rect(0, 0, this.itemWidth, this.itemHeight)
-    this.ev.fill(0xccc)
+    this.ev.fill(0xFA9C61)
+    this.ev.alpha = 0.5
     this.container.hitArea = new Rectangle(
       0,
       0,

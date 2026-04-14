@@ -491,13 +491,11 @@ const handleLoadProject = (projectId: number) => {
     console.error('项目ID不存在');
     return;
   }
-
   // 使用路由导航到编辑器页面，通过state传递项目ID
   router.push({
     path: '/',
     state: { projectId: projectId.toString() }
   });
-
   console.log('加载项目:', projectId);
 };
 </script>
@@ -518,7 +516,7 @@ const handleLoadProject = (projectId: number) => {
 .info-editor{
   min-height: 600px;
   min-width: 480px;
-  background-color: #ffffff;
+  background-color: #0e0e0e;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -531,7 +529,8 @@ const handleLoadProject = (projectId: number) => {
   align-items: center;
   padding: 20px 24px;
   border-bottom: 1px solid #e5e5e5;
-  background-color: #fafafa;
+  background-color: #0e0e0e;
+
 }
 
 .editor-header h3 {
@@ -781,6 +780,8 @@ const handleLoadProject = (projectId: number) => {
   min-width: 100vw;
   display: flex;
   background-color: #f5f5f5;
+  background-color: #0e0e0e;
+
 }
 
 .right {
@@ -796,10 +797,12 @@ const handleLoadProject = (projectId: number) => {
 /* 用户信息卡片 */
 .user-profile {
   background-color: white;
+  
+  background-color: #0e0e0e;
   border-radius: 12px;
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 0.1px solid #575757;
 }
 
 .profile-header {
@@ -817,7 +820,7 @@ const handleLoadProject = (projectId: number) => {
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #e0e0e0;
+  border: 1.5px solid #e0e0e0;
 }
 
 .user-info {
@@ -827,13 +830,13 @@ const handleLoadProject = (projectId: number) => {
 .username {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: #eeeeee;
   margin: 0 0 10px 0;
 }
 
 .bio {
   font-size: 16px;
-  color: #666;
+  color: #9e9e9e;
   margin: 0 0 20px 0;
   line-height: 1.5;
 }
@@ -852,7 +855,7 @@ const handleLoadProject = (projectId: number) => {
 .stat-value {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #eeeeee;
 }
 
 .stat-label {
@@ -864,9 +867,11 @@ const handleLoadProject = (projectId: number) => {
 /* 作品展示 */
 .user-works {
   background-color: white;
+  background-color: #0e0e0e;
+  
   border-radius: 12px;
   padding: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 0.1px solid #575757;
   max-height: 100%;
   overflow: auto;
 }
@@ -874,7 +879,7 @@ const handleLoadProject = (projectId: number) => {
 .works-title {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: #eeeeee;
   margin: 0 0 20px 0;
 }
 
@@ -885,7 +890,8 @@ const handleLoadProject = (projectId: number) => {
 }
 
 .work-item {
-  background-color: #f9f9f9;
+  background-color: #0e0e0e;
+  border: 0.1px solid rgb(224, 224, 224,0.3);
   border-radius: 8px;
   overflow: hidden;
   transition: transform 0.3s, box-shadow 0.3s;
@@ -908,7 +914,7 @@ const handleLoadProject = (projectId: number) => {
 .thumbnail-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
+  background: linear-gradient(135deg, #313131 0%, #474747 100%);
   opacity: 0.8;
 }
 

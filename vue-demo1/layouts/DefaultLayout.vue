@@ -222,7 +222,6 @@
 
       <Aside @loaded="(msg)=>{asideLoaded=msg}" class="inline-block"></Aside>
     <section class="right">
-
       <div class="main">
         <nav class="nav">
             <div class="nav-info">
@@ -263,7 +262,11 @@
         </nav>
           <section class="piano" :style="{'width':pianoWidth+'px'}">
       <!--canvas钢琴卷帘-->
-            <PianoRoll v-if="asideLoaded" class="canvas-piano" :style="{width:'100%'}" :isMultiUser="isMultiUserProject" :projectId="currentProjectId"></PianoRoll>
+            <PianoRoll v-if="asideLoaded"
+            class="canvas-piano"
+            :style="{width:'100%'}"
+            :isMultiUser="isMultiUserProject"
+            :projectId="currentProjectId"></PianoRoll>
             <!-- 子路由内容 -->
             <!-- <router-view v-if="asideLoaded" class="sub-content"></router-view> -->
           </section>
@@ -271,8 +274,11 @@
           <div class="function-action">
             <h3 class="function-play" @click="playBtn">播放</h3>
             <h3 class="function-pause">暂停</h3>
-            <h3 class="function-speed">速度</h3>
-            <BpmSlider style="display: inline-block;">22</BpmSlider >
+            <h3 class="function-bpm">速度</h3>
+            <BpmSlider style="display: inline-block;"
+            :projectId="currentProjectId"
+            :isMultiUser="isMultiUserProject"
+            @update:bpm="(bpmFromSlider)=>{bpmValue=bpmFromSlider}"></BpmSlider >
           </div>
           <div class="function-react">
             <button id="function-import">
@@ -371,12 +377,18 @@ import { ref, watch, onMounted, onUnmounted,watchEffect,computed,nextTick } from
 import  { StartPlay } from '@/data/musicMaterials';
 import { Midi } from '@tonejs/midi';
 import * as Tone from "tone"
+import {Track,Clip} from "../src/types/class.ts"
 import {createProject,updateProject,
         getProjectList,getProject,
         sendInvitaion,confirmInvitation,
         addCollaborator } from '../src/utils/api.js';
 import router from '@/router/index.js';
 import socket from '@/utils/socket.ts';
+import { collaborativeEventsDefault,
+         registerSocketListenersDefault,
+         unregisterSocketListenersDefault } from '@/utils/socketEvents.ts';
+
+
 
 //协作状态：是否多人
 const collaborators = ref<unknown[]>([]);
@@ -430,6 +442,54 @@ const isMultiUserProject = computed(() => {
   return collaborators.value.length > 1;
 });
 
+// 添加标志位，用于区分本地修改和远程更新
+const isLocalOperation = ref(false);
+
+
+//根据是否多人项目挂载/取消挂载socket事件
+watch(isMultiUserProject,(newVal)=>{
+  if(newVal){
+    registerSocketListenersDefault(
+      {onTitleUpdated: (data) => {
+        console.log('title-updated:', data);
+        projectTitle.value = data.title;
+      },
+      onDescriptionUpdated: (data) => {
+        console.log('description-updated:', data);
+        projectBrief.value = data.description;
+      }}
+    )
+  }else{
+    unregisterSocketListenersDefault()
+  }
+})
+
+  // 监听编辑状态变化，自动聚焦输入框(本地操作)
+watch(isEditingTitle, async (newValue) => {
+  if (newValue) {
+    await nextTick();
+    titleInput.value?.focus();
+    isLocalOperation.value = true;
+    if(isMultiUserProject.value&&!isLocalOperation.value){
+      collaborativeEventsDefault.editTitle(currentProjectId.value!, projectTitle.value || '');
+    }
+  }
+});
+
+watch(isEditingBrief, async (newValue) => {
+  if (newValue) {
+    await nextTick();
+    briefInput.value?.focus();
+      isLocalOperation.value = true;
+    if(isMultiUserProject.value&&!isLocalOperation.value){
+      collaborativeEventsDefault.editDescription(currentProjectId.value!, projectBrief.value || '');
+    }
+  }
+});
+
+
+
+
 
 // 打开导出作品弹窗
 const openExportModal = () => {
@@ -442,17 +502,14 @@ const closeExportModal = () => {
 };
 
 const ensureProjectExist=()=>{
-  console.log(!currentProjectId.value);
-
   if(!currentProjectId.value){
     //正在创建项目
-    return saveProject().then((res)=>{
+   return  saveProject().then((res)=>{
       console.log('res:',res);
       currentProjectId.value=res.id
       console.log('check over');
     })
   }
-  console.log('check over');
   return Promise.resolve()
 }
 
@@ -463,8 +520,8 @@ async function openInviteModal() {
   const userId = currentUser?.id || null;
   inviteCode.value = generateRandomCode();
 
-  await ensureProjectExist()
-    const inviteData={
+  await ensureProjectExist();
+  const inviteData={
     projectId:currentProjectId.value,
     invite_code:inviteCode.value,
     inviter_id:userId,
@@ -473,13 +530,10 @@ async function openInviteModal() {
   }
   console.log(inviteData);
   console.log(currentProjectId.value);
-
   sendInvitaion(inviteData)
   showInviteModal.value = true;
   socket.emit('host-project',currentProjectId.value)
 };
-
-
 
 // 关闭邀请协作弹窗
 const closeInviteModal = () => {
@@ -510,20 +564,9 @@ const handleExportWav =() => {
   const exportAsWAV = pianoLayout.exportAsWAV;
   exportAsWAV()
 
-
   closeExportModal();
 };
 
-// 乐器ID到MIDI乐器编号的映射
-const instrumentToMidiMap: Record<string, number> = {
-  'piano': 0,      // Acoustic Grand Piano
-  'guitar': 24,    // Acoustic Guitar (nylon)
-  'bass': 33,      // Electric Bass (finger)
-  'drum': 118,     // Synth Drum
-  'string': 48,    // String Ensemble 1
-  '管乐': 56,      // Trumpet
-  '打击乐': 115,   // Woodblock
-};
 
 function handleLogout() {
   // 删除localStorage中的认证信息
@@ -534,20 +577,21 @@ function handleLogout() {
 }
 
 const handleExportMidi = () => {
-  const pianoLayout = document.querySelector('.piano-layout') as any;
+  const pianoLayout = document.querySelector('.piano-layout')!;
+  // @ts-expect-error 未定义属性 trackMap
   const trackMap = pianoLayout.trackMap;
 
   const midi=new Midi()
 
   midi.header.setTempo(bpmValue.value)
 
-  trackMap.forEach((track:any)=>{
+  trackMap.forEach((track:Track)=>{
     const midiTrack=midi.addTrack()
     midiTrack.channel=track.midiChannel
     //TODO:乐器分轨道
     midiTrack.instrument.number=0
     //midiTrack.instrument=instrumentToMidiMap[track.instrument]
-    track.clips.forEach((clip:any)=>{
+    track.clips.forEach((clip:Clip)=>{
       if(!clip.isChord){
         midiTrack.addNote({
         time: clip.startsecond,
@@ -687,10 +731,8 @@ const loadProject = async (projectId: number) => {
       currentProjectId.value = projectId;
 
       // 更新项目信息
-      const titleInput = document.getElementById('title') as HTMLInputElement;
-      const briefInput = document.getElementById('brief') as HTMLInputElement;
-      if (titleInput) titleInput.value = projectData.title || '';
-      if (briefInput) briefInput.value = projectData.description || '';
+      projectTitle.value = projectData.title || '';
+      projectBrief.value = projectData.description || '';
 
       closeHistoryModal();
       alert('项目加载成功！');
@@ -724,7 +766,6 @@ try {
   }, 2000);
 
 };
-
 
 // 加入协作
 const handleJoinCollaboration = () => {
@@ -797,19 +838,30 @@ const closeProjectConfirmModal = () => {
 };
 
 // 确认加入项目
-const confirmJoinProject = () => {
+const confirmJoinProject = async () => {
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
   const user_id = currentUser?.id || null;
-  if (pendingProjectId.value) {
-    loadProject(pendingProjectId.value);
-    addCollaborator({
+
+  if (!pendingProjectId.value) {
+    return;
+  }
+
+  try {
+    await addCollaborator({
       projectId: pendingProjectId.value,
       user_id,
-      role:"editor",
-      permissions:{"edit":true}
-    })
+      role: "editor",
+      permissions: {"edit": true},
+      title: pendingProjectInfo.value.title,
+      duration_second: pendingProjectInfo.value.duration_second,
+    });
+
+    await loadProject(pendingProjectId.value);
     closeProjectConfirmModal();
+  } catch (error) {
+    console.error('加入项目失败:', error);
+    alert('加入项目失败，请重试');
   }
 };
 
@@ -857,7 +909,7 @@ const handleDragLeave = () => {
 // 处理文件拖放
 const handleDrop = (event: DragEvent) => {
   isDragOver.value = false;
-  const files = event.dataTransfer.files;
+  const files = event.dataTransfer!.files;
   if (files && files.length > 0) {
     const file = files[0];
     if (file.name.endsWith('.mid') || file.name.endsWith('.midi')) {
@@ -911,11 +963,7 @@ const confirmImportMidi = () => {
 };
 
 // 获取BPM值
-const getBpmValue = (): number => {
-  // 从BpmSlider组件获取当前BPM值
-  const bpmInput = document.querySelector('#volume') as HTMLInputElement;
-  return bpmInput ? parseInt(bpmInput.value) || 120 : 120;
-};
+
 
 // 创建保存项目的数据体
 function createProjectSaveData(): any {
@@ -925,12 +973,9 @@ function createProjectSaveData(): any {
   const userId = currentUser?.id || null;
 
   // 获取项目基本信息
-  const titleInput = document.getElementById('title') as HTMLInputElement;
-  const briefInput = document.getElementById('brief') as HTMLInputElement;
-
-  const title = titleInput?.value?.trim() || '未命名项目';
-  const description = briefInput?.value?.trim() || '';
-  const bpm = getBpmValue();
+  const title = projectTitle.value?.trim() || '未命名项目';
+  const description = projectBrief.value?.trim() || '';
+  const bpm = bpmValue.value;
 
   // 获取PianoRoll组件实例（通过DOM访问绑定的函数）
   const pianoLayout = document.querySelector('.piano-layout') as any;
@@ -1038,135 +1083,104 @@ const isMaterialUnfold=ref([])
 const pianoWidth=ref(0)
 let materialItem=document.querySelectorAll('.material-list')
 //计算钢琴卷帘宽度
-  function calculatePianoWidth(){
-    const viewportWidth=window.innerWidth
-    const asideElement = document.querySelector('.aside') as HTMLElement
-    const asideWidth = asideElement ? asideElement.offsetWidth : 0
-    const materialElement = document.querySelector('.material') as HTMLElement
-    const materialWidth = materialElement ? materialElement.offsetWidth : 0
-    const isAsideClose=document.querySelector('.aside-btn')?.classList.contains('close')
-    pianoWidth.value = viewportWidth - materialWidth - (isAsideClose ? asideWidth: 0)
-console.log('hello');
-
+function calculatePianoWidth(){
+  const viewportWidth=window.innerWidth
+  const asideElement = document.querySelector('.aside') as HTMLElement
+  const asideWidth = asideElement ? asideElement.offsetWidth : 0
+  const materialElement = document.querySelector('.material') as HTMLElement
+  const materialWidth = materialElement ? materialElement.offsetWidth : 0
+  const isAsideClose=document.querySelector('.aside-btn')?.classList.contains('close')
+  pianoWidth.value = viewportWidth - materialWidth - (isAsideClose ? asideWidth: 0)
+}
+const playBtn = async () => {
+try {
+  console.log("开始播放");
+  // 1. 等待 Tone.js 初始化
+  await Tone.start()
+  // 2. 获取 PianoRoll 组件
+  const pianoLayout = document.querySelector('.piano-layout');
+  // 检查组件是否存在
+  //@ts-expect-error 未定义属性 trackMap
+  if (!pianoLayout || !pianoLayout.trackMap) {
+    alert('编辑器未加载，请稍后重试');
+    return;
   }
-  const playBtn = async () => {
-  try {
-    console.log("开始播放");
-    // 1. 等待 Tone.js 初始化
-    await Tone.start()
-    // 2. 获取 PianoRoll 组件
-    const pianoLayout = document.querySelector('.piano-layout') as any;
-    // 检查组件是否存在
-    if (!pianoLayout || !pianoLayout.trackMap) {
-      alert('编辑器未加载，请稍后重试');
-      return;
-    }
-    const trackMap = pianoLayout.trackMap;
-
-    // 3. 检查是否有内容
-    // if (trackMap.length === 0 || !trackMap.forEach(t => t.clips.length > 0)) {
-    if (trackMap.length === 0) {
-      alert('请先添加音乐片段');
-      return;
-    }
-
-    // 4. 停止之前的播放
-    Tone.getTransport().cancel()
-    Tone.getTransport().stop()
-
-    // 5. 读取 BPM（确保ID正确）
-    const bpmInput = document.querySelector('#volume') as HTMLInputElement | null
-    const bpm = bpmInput ? Number(bpmInput.value) || 120 : 120
-    Tone.getTransport().bpm.value = bpm
-    console.log(trackMap);
-
-    // 6. 逐个轨道播放
-    trackMap.forEach(item => {
-      if (item.clips && item.clips.length > 0) {
-        item.play()
-      }
-    })
-
-    console.log("播放成功");
-
-  } catch (error) {
-    console.error('播放失败:', error);
-    alert('播放失败: ' + (error as Error).message);
+  //@ts-expect-error 未定义属性 trackMap
+  const trackMap = pianoLayout.trackMap;
+  // 3. 检查是否有内容
+  // if (trackMap.length === 0 || !trackMap.forEach(t => t.clips.length > 0)) {
+  if (trackMap.length === 0) {
+    alert('请先添加音乐片段');
+    return;
   }
+  // 4. 停止之前的播放
+  Tone.getTransport().cancel()
+  Tone.getTransport().stop()
+
+  // 5. 使用当前BPM值
+    Tone.getTransport().bpm.value = bpmValue.value
+  console.log(trackMap);
+  // 6. 逐个轨道播放
+  trackMap.forEach(item => {
+    if (item.clips && item.clips.length > 0) {
+      item.play()
+    }
+  })
+  console.log("播放成功");
+
+ } catch (error) {
+   console.error('播放失败:', error);
+   alert('播放失败: ' + (error as Error).message);
+ }
 }
 
-  // 监听编辑状态变化，自动聚焦输入框
-  watch(isEditingTitle, async (newValue) => {
-    if (newValue) {
-      await nextTick();
-      titleInput.value?.focus();
-    }
-  });
 
-  watch(isEditingBrief, async (newValue) => {
-    if (newValue) {
-      await nextTick();
-      briefInput.value?.focus();
-    }
-  });
 
-  onMounted(() => {
-    // 加载用户信息
-    loadUserInfo();
-    collaborators.value.push({
-      id: currentUser.value.id||null,
-      name: currentUser.value?.username || null,
-      avatar_url: currentUser.value?.avatar_url || null,
-      socketId: socket.id||null,
-    })
-    // 加入项目
-    //是不是多人
-    if (isMultiUserProject.value && currentProjectId.value) {
-    // initializeCollaborativeMode();
+
+onMounted(() => {
+  // 加载用户信息
+  loadUserInfo();
+  collaborators.value.push({
+    id: currentUser.value.id||null,
+    name: currentUser.value?.username || null,
+    avatar_url: currentUser.value?.avatar_url || null,
+    socketId: socket.id||null,
+  })
+  // 加入项目
+  //是不是多人
+  if (isMultiUserProject.value && currentProjectId.value) {
+  // initializeCollaborativeMode();
+}
+  // 监听localStorage变化
+  window.addEventListener('storage', handleStorageChange);
+  // 绑定保存按钮点击事件
+  const saveBtn = document.getElementById('function-save');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveProject);
   }
-    // 监听localStorage变化
-    window.addEventListener('storage', handleStorageChange);
+  // 绑定导入按钮点击事件
+  const importBtn = document.getElementById('function-import');
+  if (importBtn) {
+    importBtn.addEventListener('click', openImportModal);
+  }
+  const pianoCanvas=document.querySelector('.piano') as HTMLElement
+  //放下元素位置的事件监听
+  pianoCanvas?.addEventListener('dragover',(e)=>{
+    e.preventDefault()
 
-    // 绑定保存按钮点击事件
-    const saveBtn = document.getElementById('function-save');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', saveProject);
-    }
-
-    // 绑定导入按钮点击事件
-    const importBtn = document.getElementById('function-import');
-    if (importBtn) {
-      importBtn.addEventListener('click', openImportModal);
-    }
-
-    const pianoCanvas=document.querySelector('.piano') as HTMLElement
-    //放下元素位置的事件监听
-    pianoCanvas?.addEventListener('dragover',(e)=>{
-      e.preventDefault()
-
-    })
-    pianoCanvas.addEventListener('drop',(e)=>{
-      e.preventDefault()
-    })
-    calculatePianoWidth(); // 初加载计算钢琴边框
-    window.addEventListener('resize',calculatePianoWidth);
-    // 添加侧边栏展开/收起的点击事件监听
-    // const setupAsideButtonListener = () => {
-    //   const asideBtn = document.querySelector('.aside-btn');
-    //   if (asideBtn) {
-    //     asideBtn.addEventListener('click', calculatePianoWidth);
-    //   }
-    // }
-    // // 组件挂载后设置事件监听
-    // setupAsideButtonListener();
-    // 添加MutationObserver监听DOM变化，实现真正的响应式
-    const observeAsideChanges = () => {
+  })
+  pianoCanvas.addEventListener('drop',(e)=>{
+    e.preventDefault()
+  })
+  calculatePianoWidth(); // 初加载计算钢琴边框
+  window.addEventListener('resize',calculatePianoWidth);
+  const observeAsideChanges = () => {
   const asideElement = document.querySelector('.aside');
   if (asideElement) {
     const observer = new MutationObserver(() => {
       // 获取当前的 margin-left 值
-      const computedStyle = getComputedStyle(asideElement);
-      const marginLeft = computedStyle.marginLeft;
+      // const computedStyle = getComputedStyle(asideElement);
+      // const marginLeft = computedStyle.marginLeft;
 
 
       // 根据 margin-left 的变化重新计算钢琴卷帘宽度
@@ -1389,21 +1403,6 @@ function generateRandomCode() {
   return result;
 }
 
-//TODO：监测用户加入退出
-// function initializeCollaborativeMode() {
-//   if (!currentProjectId.value) return;
-//   // 加入项目房间
-//   collaborativeEvents.joinProject(currentProjectId.value);
-//   // 注册事件回调
-//   registerSocketListeners({
-//     onClipUpdated: handleRemoteClipUpdate,
-//     onClipAdded: handleRemoteClipAdd,
-//     onClipDeleted: handleRemoteClipDelete,
-//     onUserJoined: handleUserJoined,
-//     onUserLeft: handleUserLeft
-//   });
-// }
-
 socket.on('user-joined', (data: any) => {
   collaborators.value.push(data);
   // console.log(collaborators.value);
@@ -1414,60 +1413,6 @@ socket.on('disconnect', () => {
     console.log('用户断开连接:', socket.id);
     collaborators.value=collaborators.value.filter(u=>u.socketId!==socket.id)
 });
-
-function handleRemoteClipUpdate(data: any) {
-  const pianoLayout = document.querySelector('.piano-layout') as any;
-  if (pianoLayout && pianoLayout.trackMap) {
-    const { operation } = data;
-    const track = pianoLayout.trackMap.find(t => t.track_id === operation.trackId);
-    if (track) {
-      const clip = track.clips.find(c => c.clip_id === operation.clipId);
-      if (clip) {
-        Object.assign(clip, operation.updates);
-      }
-    }
-  }
-}
-/**
- * 处理远程片段添加
- */
-function handleRemoteClipAdd(data: any) {
-  const pianoLayout = document.querySelector('.piano-layout') as any;
-  if (pianoLayout && pianoLayout.trackMap) {
-    const { clip } = data;
-    const track = pianoLayout.trackMap.find(t => t.track_id === clip.track_id);
-    if (track) {
-      track.clips.push(clip);
-    }
-  }
-}
-/**
- * 处理远程片段删除
- */
-function handleRemoteClipDelete(data: any) {
-  const pianoLayout = document.querySelector('.piano-layout') as any;
-  if (pianoLayout && pianoLayout.trackMap) {
-    const { trackId, clipId } = data;
-    const track = pianoLayout.trackMap.find(t => t.track_id === trackId);
-    if (track) {
-      track.clips = track.clips.filter(c => c.clip_id !== clipId);
-    }
-  }
-}
-/**
- * 处理用户加入
- */
-function handleUserJoined(data: any) {
-  collaborators.value.push(data.user);
-  console.log(`用户 ${data.user.username} 加入项目`);
-}
-/**
- * 处理用户离开
- */
-function handleUserLeft(data: any) {
-  collaborators.value = collaborators.value.filter(u => u.id !== data.userId);
-  console.log(`用户 ${data.userId} 离开项目`);
-}
 
 </script >
 
@@ -1493,16 +1438,18 @@ display: flex;
 .function{
   display: inline-block;
   height: 100px; /* 固定高度 */
+  min-height: 100px; /* 确保最小高度 */
+  max-height: 100px; /* 确保最大高度 */
   position: relative; /* 确保定位稳定 */
   transform: scale(1); /* 防止缩放 */
   transform-origin: bottom left; /* 缩放原点 */
-  background-color:#11212D;
+  background-color:#0e0e0e;
 }
 
 .function-action{
   float: left;
-  height: 6vh;
-  line-height: 6vh;
+  height: 80px;
+  line-height: 80px;
 }
 
 .function-action h3{
@@ -1511,8 +1458,8 @@ display: flex;
 
 .function-react{
   float: right;
-  height: 6vh;
-  line-height: 6vh;
+  height: 80px;
+  line-height: 80px;
 }
 
 .function-play::before{
@@ -1526,17 +1473,32 @@ display: flex;
 
 .function-react button{
   margin-right: 20px;
-  height: 3vh;
-  width: 8vh;
-  border: none;
-  background-color: rgb(17, 175, 253);
-  color: #ccc;
+  height: 33px;
+  width: 80px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background-color: rgba(255,255,255,0.05);
+  color: #e2e8f0;
   cursor: pointer;
-  border-radius: 10%;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.function-react button:hover{
+  background-color: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.function-react button:active{
+  transform: translateY(0);
 }
 
 .material{
-  background-color: #253745;
+  background-color:#202020;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -1552,9 +1514,12 @@ display: flex;
 }
 
 .tone{
-  min-height: 10vh;
+  height:130px;  /* 固定高度 */
+  min-height:130px; /* 确保最小高度 */
+  max-height:130px; /* 确保最大高度 */
   min-width: 250px;
-  background-color:  #11212D;
+  background-color:#202020;
+
 }
 .material-container{
   flex:1;
@@ -1570,17 +1535,17 @@ height: auto;
   z-index: 1000;
   color: #CCD0CF;
   box-sizing: border-box;
-  height: 3.3vh;
-  line-height: 3.3vh;
-  padding: 0 0 0 1vh;
+  height: 38px;
+  line-height: 38px;
+  padding: 0 0 0 15px;
 }
 .material-item:hover{
   cursor: pointer;
-  background-color: #11212d;
+  background-color: #414141;
 }
 .material-item i{
   font-family: 'icomoon';
-  font-size: 1.5vh;
+  font-size: 18px;
   font-style: none ;
 
 }
@@ -1592,13 +1557,13 @@ i::before{
 .material-list{
   color: rgb(229, 232, 235);
   box-sizing: border-box;
-  height: 3.3vh;
-  line-height: 3.3vh;
-  padding: 0 0 0 2.3vh;
-  font-size: 1.5vh;
+  height: 35px;
+  line-height: 35px;
+  padding: 0 0 0 30px;
+  font-size: 18px;
 }
 .material-list:hover{
-  background-color: #11212d;
+  background-color: #414141;
   cursor: pointer;
 }
 
@@ -1612,14 +1577,16 @@ i::before{
 }
 
 .material-item-title{
-  margin-left: 1vh;
-  font-size: 1.5vh;
+  margin-left: 15px;
+  font-size: 18px;
 }
 .mode{
   /* position: absolute;
   bottom: 0; */
   width: 250px;
-  height: 6vh;
+    height: 100px; /* 固定高度 */
+  min-height: 100px; /* 确保最小高度 */
+  max-height: 100px; /* 确保最大高度 */
   background-color:#11212D;
 }
 
@@ -1644,7 +1611,7 @@ i::before{
   background-color: #11212D;
   padding: 25px 15px 0 15px;
   width: 100%; /* 确保宽度充满 */
-  font-size: 2vh;
+  font-size: 20px;
 }
 .nav-info{
     float: left;
@@ -1712,13 +1679,13 @@ i::before{
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1vh 0.5vh;
+  padding: 10px 5px;
 }
 
 .select-label{
-  font-size: 1.2vh;
+  font-size: 14px;
   color: #9fb2c1;
-  margin-bottom: 0.5vh;
+  margin-bottom: 0.5px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -1757,11 +1724,11 @@ i::before{
 
 .select-arrow{
   position: absolute;
-  right: 0.8vh;
+  right: 5px;
   top: 50%;
   transform: translateY(-50%);
   color: #9fb2c1;
-  font-size: 0.8vh;
+  font-size: 10px;
   pointer-events: none;
   transition: transform 0.3s ease;
 }
@@ -1778,7 +1745,7 @@ i::before{
 .custom-select select option{
   background-color: #253745;
   color: #ffffff;
-  padding: 0.5vh;
+  padding: 0.5px;
 }
 
 .co-editer{
@@ -1791,40 +1758,88 @@ i::before{
 }
 
 .user{
-    height: 8vh;
+    height: 130px;
     float: right;
     justify-content: center;
+    position: relative;
 }
 .user-name{
-  height: 5.5vh;
-  line-height: 5.5vh;
+  height:70px;
+  line-height:70px;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.user-name:hover{
+  color: #ccc;
 }
 
 nav img{
   margin-left: 20px;
-  height: 5.5vh;
-  width: 5.5vh;
+  height: 70px;
+  width: 70px;
   border-radius: 50%;
   vertical-align: top;
+  object-fit: cover;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
 }
+
+nav img:hover{
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 .user:hover .user-detail{
-display: block;
-z-index: 999 ;
+  display: block;
+  z-index: 999;
 }
+
 .user-detail{
   z-index: 999;
-    display: none;
-    position: absolute;
-    top: 9.5vh;
-    right: 20px;
-    float: right;
-    background-color: #fff;
-    height: 200px;
-    width: 300px;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 0 5px 5px rgba(62, 62, 62, 0.3);
-    font-size: 2vh;
+  display: none;
+  position: absolute;
+  top: 130px;
+  right: 20px;
+  float: right;
+  background-color: #fff;
+  height: 110px;
+  width: 180px;
+  padding: 10px 0 10px 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  font-size: 20px;
+  border: 1px solid #f0f0f0;
+  backdrop-filter: blur(8px);
+}
+
+.user-detail ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-detail li{
+  margin-bottom: 5px;
+  transition: all 0.3s ease;
+}
+
+.user-detail li:hover{
+  transform: translateX(8px);
+}
+
+.user-detail a{
+  display: block;
+  color: #333;
+  text-decoration: none;
+  padding: 8px 0;
+  transition: color 0.3s ease;
+}
+
+.user-detail a:hover{
+  color: #64748b;
 }
 
 .piano{
@@ -1832,7 +1847,6 @@ z-index: 999 ;
     flex: 1;
     min-height: 0;
     min-width: 0;
-    background-color: bisque;
     overflow: hidden;
     transition: 0.4s all;
 }

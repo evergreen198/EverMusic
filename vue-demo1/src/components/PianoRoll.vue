@@ -41,8 +41,6 @@ isMultiUser: {
 }
 });
 
-// 根据和弦符号（如 C, Cm, C7, Cmaj7, Cmin7...）生成和弦音名列表（默认根音在 4 组）
-
 //！响应式canvas
 const pianoCanvas = ref<HTMLCanvasElement | null>(null);
 // 使用reactive对象来存储位置，确保响应性
@@ -51,17 +49,18 @@ const positionState = reactive({
 });
 //设置字体
 BitmapFont.install({
-      name:'mufont',
-      style:{
-        fontFamily:'Arial'
-      }
-    })
+  name:'mufont',
+  style:{
+    fontFamily:'Arial'
+  }
+})
 
 onMounted(async () => {
   console.log('PianoRoll组件挂载，isMultiUser:', props.isMultiUser);
 
   const pianoLayout = document.querySelector('.piano-layout');
   if (pianoLayout) {
+    // (pianoLayout as HTMLElement & { calculateSongDuration: () => number }).calculateSongDuration = calculateSongDuration;
     (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
     (pianoLayout as any).calculateSongDuration = calculateSongDuration;
     (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
@@ -259,44 +258,6 @@ function resizeClipLocal(clipId: number, trackId: number, newWidth: number, dire
 
 
 
-// //注册远程事件监听
-// function registerRemoteOperations() {
-//   socket.on('clip-added', (data) => {
-//     applyOperation({
-//       type: 'add',
-//       trackId: data.clip.track_id,
-//       clip: reconstructClip(data.clip)
-//     }, true);
-//   });
-
-//   socket.on('clip-deleted', (data) => {
-//     applyOperation({
-//       type: 'delete',
-//       trackId: data.trackId,
-//       clipId: data.clipId
-//     }, true);
-//   });
-
-//   socket.on('clip-moved', (data) => {
-//     applyOperation({
-//       type: 'move',
-//       trackId: data.fromTrackId,
-//       newTrackId: data.toTrackId,
-//       clipId: data.clipId,
-//       position: data.position
-//     }, true);
-//   });
-
-//   socket.on('clip-resized', (data) => {
-//     applyOperation({
-//       type: 'resize',
-//       trackId: data.trackId,
-//       clipId: data.clipId,
-//       updates: data.updates
-//     }, true);
-//   });
-// }
-
 //根据是否为多人项目注册或取消远程监听
 watch(()=>props.isMultiUser,async (ismulti)=>{
   console.log('多人');
@@ -341,9 +302,6 @@ function getCurrentTrackId(clip: Clip): number {
   return -1;
 }
 
-// function getCurrentProjectId(): number {
-//   return (document.querySelector('.piano-layout') as any)?.currentProjectId || 0;
-// }
 
 /**
  * 统一的操作处理函数

@@ -55,6 +55,9 @@
       </p>
     </div>
   </div>
+  <div class="waves-container">
+    
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -147,17 +150,18 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   padding: 20px;
 }
 
 .auth-box {
-  background: white;
+  background: #1e1e2f;
   border-radius: 20px;
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .brand {
@@ -168,18 +172,19 @@ const handleRegister = async () => {
 .logo {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3a3a5a 0%, #2d3748 100%);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 30px;
   margin: 0 auto 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .brand h1 {
   font-size: 24px;
-  color: #333;
+  color: #e2e8f0;
   font-weight: 700;
 }
 
@@ -187,7 +192,7 @@ const handleRegister = async () => {
   display: flex;
   position: relative;
   margin-bottom: 30px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
 }
 
 .tab {
@@ -197,13 +202,13 @@ const handleRegister = async () => {
   background: none;
   font-size: 16px;
   font-weight: 600;
-  color: #999;
+  color: #94a3b8;
   cursor: pointer;
   transition: color 0.3s;
 }
 
 .tab.active {
-  color: #667eea;
+  color: #94a3b8;
 }
 
 .tab-line {
@@ -211,7 +216,7 @@ const handleRegister = async () => {
   bottom: -2px;
   width: 50%;
   height: 2px;
-  background: #667eea;
+  background: #64748b;
   transition: left 0.3s;
 }
 
@@ -224,41 +229,50 @@ const handleRegister = async () => {
 .input-group input {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid rgba(255,255,255,0.1);
   border-radius: 12px;
   font-size: 15px;
+  background: rgba(255,255,255,0.05);
+  color: #e2e8f0;
   transition: all 0.3s;
+}
+
+.input-group input::placeholder {
+  color: #64748b;
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #64748b;
+  background: rgba(255,255,255,0.08);
 }
 
 .submit-btn {
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #3a3a5a 0%, #2d3748 100%);
+  color: #e2e8f0;
   border: none;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, #4a4a6a 0%, #3d4758 100%);
 }
 
 .submit-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .error {
-  color: #ff4d4f;
+  color: #f87171;
   font-size: 14px;
   text-align: center;
 }
@@ -266,13 +280,18 @@ const handleRegister = async () => {
 .tip {
   text-align: center;
   margin-top: 25px;
-  color: #666;
+  color: #94a3b8;
   font-size: 14px;
 }
 
 .tip a {
-  color: #667eea;
+  color: #94a3b8;
   text-decoration: none;
   font-weight: 600;
+  transition: color 0.3s;
+}
+
+.tip a:hover {
+  color: #e2e8f0;
 }
 </style>

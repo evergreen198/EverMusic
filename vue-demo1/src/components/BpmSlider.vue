@@ -1,40 +1,81 @@
 <!-- filepath: c:\Users\文\Desktop\前端\复健\vue-demo1\src\components\VolumeSlider.vue -->
 <template>
-    <div class="volume-slider">
-      <p for="volume">bpm {{ Bpm }}</p>
+    <div class="bpm-slider">
+      <p for="bpm">bpm {{ Bpm }}</p>
       <input
-        id="volume"
+        id="bpm"
         type="range"
         min="0"
         max="200"
         v-model="Bpm"
-        @input="updateVolume"
+        @input="updateBpm"
       />
     </div>
   </template>
-  
+
   <script setup lang="ts">
-  import { ref } from "vue";
-  
-  // 定义音量状态
+  import { ref, watch,onMounted } from "vue";
+  import { collaborativeEventsBpmSlider, registerSocketListenersBpmSlider, unregisterSocketListenersBpmSlider } from "@/utils/socketEvents";
+
   const Bpm = ref(120);
-  
-  // 定义事件发射器
-  const emit = defineEmits(["update:volume"]);
-  
-  // 更新音量并发射事件
-  function updateVolume() {
-    emit("update:volume", Bpm.value);
+  const isLocalOperation=ref(false)
+
+  const props = defineProps({
+    projectId: {
+      type: Number,
+      default: null
+    },
+    isMultiUser: {
+      type: Boolean,
+      default: false
+    }
+  })
+  // 定义bpm状态
+
+  const emit = defineEmits(["update:bpm"]);
+  function updateBpm() {
+    isLocalOperation.value = true;
+    emit("update:bpm", Number(Bpm.value));
+    if (props.isMultiUser && props.projectId) {
+      collaborativeEventsBpmSlider.editBpm(props.projectId, Number(Bpm.value));
+    }
   }
+
+
+  onMounted(() => {
+    // 监听BPM变化
+    watch(Bpm, (newVal) => {
+      // 只有本地操作才发送socket事件
+      if (isLocalOperation.value && props.isMultiUser && props.projectId) {
+        collaborativeEventsBpmSlider.editBpm(props.projectId, Number(newVal));
+        isLocalOperation.value = false; // 重置标志位
+      }
+    });
+
+    // 监听多用户状态
+    watch(() => props.isMultiUser, (newVal) => {
+      if (newVal) {
+        registerSocketListenersBpmSlider({
+          onBpmUpdated: (data) => {
+            isLocalOperation.value = false; // 标记为远程更新
+            Bpm.value = data.bpm;
+          }
+        });
+      } else {
+        unregisterSocketListenersBpmSlider();
+      }
+    });
+  })
+
   </script>
-  
+
   <style scoped>
-  .volume-slider {
+  .bpm-slider {
     display: flex;
     align-items: center;
     gap: 10px;
   }
-  
+
   p{
     display: inline-table;
     width: 80px;

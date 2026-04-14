@@ -2,9 +2,180 @@
   <div class="AI-editor-layout">
     <Aside></Aside>
     <div class="AI-editor">
+
+      <div class="ai-editor-bg" aria-hidden="true">
+        <div class="ai-editor-bg-base"></div>
+        <div class="ai-editor-waves">
+          <svg
+            class="waves-svg"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 2400 140"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient
+                id="ai-waves-fade"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12" />
+                <stop offset="45%" stop-color="#ffffff" stop-opacity="0.04" />
+                <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <g class="wave-layer wave-layer--1">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--back"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,88 C200,72 400,104 600,88 S1000,72 1200,88 S1600,104 1800,88 S2200,72 2400,88"
+                />
+                <path
+                  class="wave-path wave-path--back"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,88 C200,72 400,104 600,88 S1000,72 1200,88 S1600,104 1800,88 S2200,72 2400,88"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--2">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--mid-far"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,98 C220,118 440,78 660,98 S1100,118 1320,98 S1760,78 1980,98 S2200,118 2400,98"
+                />
+                <path
+                  class="wave-path wave-path--mid-far"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,98 C220,118 440,78 660,98 S1100,118 1320,98 S1760,78 1980,98 S2200,118 2400,98"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--3">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--mid"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,72 C180,52 360,92 540,72 S900,52 1080,72 S1440,92 1620,72 S1980,52 2160,72 S2280,88 2400,72"
+                />
+                <path
+                  class="wave-path wave-path--mid"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,72 C180,52 360,92 540,72 S900,52 1080,72 S1440,92 1620,72 S1980,52 2160,72 S2280,88 2400,72"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--4">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--front-soft"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,108 C240,92 480,124 720,108 S1200,92 1440,108 S1920,124 2160,108 S2280,100 2400,108"
+                />
+                <path
+                  class="wave-path wave-path--front-soft"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,108 C240,92 480,124 720,108 S1200,92 1440,108 S1920,124 2160,108 S2280,100 2400,108"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--5">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--front"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,62 C160,42 320,82 480,62 S800,42 960,62 S1280,82 1440,62 S1760,42 1920,62 S2160,82 2400,62"
+                />
+                <path
+                  class="wave-path wave-path--front"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,62 C160,42 320,82 480,62 S800,42 960,62 S1280,82 1440,62 S1760,42 1920,62 S2160,82 2400,62"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--6">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--accent-a"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,52 C200,68 400,36 600,52 S1000,68 1200,52 S1600,36 1800,52 S2200,68 2400,52"
+                />
+                <path
+                  class="wave-path wave-path--accent-a"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,52 C200,68 400,36 600,52 S1000,68 1200,52 S1600,36 1800,52 S2200,68 2400,52"
+                />
+              </g>
+            </g>
+            <g class="wave-layer wave-layer--7">
+              <g class="wave-drift">
+                <path
+                  class="wave-path wave-path--accent-b"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  d="M0,118 C260,98 520,138 780,118 S1300,98 1560,118 S1820,138 2080,118 S2240,108 2400,118"
+                />
+                <path
+                  class="wave-path wave-path--accent-b"
+                  fill="none"
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                  transform="translate(2400 0)"
+                  d="M0,118 C260,98 520,138 780,118 S1300,98 1560,118 S1820,138 2080,118 S2240,108 2400,118"
+                />
+              </g>
+            </g>
+            <rect
+              class="waves-vignette"
+              x="0"
+              y="0"
+              width="2400"
+              height="140"
+              fill="url(#ai-waves-fade)"
+              pointer-events="none"
+            />
+          </svg>
+        </div>
+      </div>
+
+
       <div class="ai-content">
         <div class="ai-header">
-          <h2>🎵 AI 音乐生成</h2>
+          <h2> AI 音乐生成</h2>
           <p class="ai-subtitle">输入曲风描述，AI 将为你生成专业的音乐</p>
         </div>
 
@@ -13,7 +184,7 @@
           <textarea
             v-model="styleDescription"
             class="style-input"
-            placeholder="例如：轻快的电子音乐，适合科技视频\n忧伤的钢琴曲，缓慢\n欢快的流行音乐，适合派对"
+            placeholder="例如：轻快的电子音乐，适合科技视频。忧伤的钢琴曲，缓慢。欢快的流行音乐，适合派对"
             rows="4"
             :disabled="isLoading"
           ></textarea>
@@ -27,7 +198,7 @@
             :disabled="!styleDescription.trim() || isLoading"
           >
             <span v-if="isLoading" class="loading-spinner">⟳</span>
-            <span v-else>🎯 生成音乐</span>
+            <span v-else> 生成音乐</span>
           </button>
         </div>
 
@@ -40,6 +211,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -49,69 +221,219 @@
   min-width: 100vw;
   max-width: 100vw;
   height: 100%;
+  min-height: 0;
   background-color: #121212;
   color: #CCD0CF;
 }
 
 .AI-editor {
+  position: relative;
   display: inline-block;
   flex: 1;
   padding: 40px;
-  background-color: #4a5277;
   overflow-y: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ai-editor-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ai-editor-bg-base {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    /* #9c9c9c 0%, */
+    /* #000000 50%, */
+    #0e0e0e 100%
+  );
+}
+
+.ai-editor-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 33.333%;
+  overflow: hidden;
+  opacity: 0.95;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 22%,
+    #000 52%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 22%,
+    #000 52%
+  );
+}
+
+.waves-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.wave-drift {
+  will-change: transform;
+}
+
+@keyframes wave-drift-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-2400px);
+  }
+}
+
+/* 各层时长略有差异，部分反向，形成纵深流动 */
+.wave-layer--1 .wave-drift {
+  animation: wave-drift-x 58s linear infinite;
+}
+
+.wave-layer--2 .wave-drift {
+  animation: wave-drift-x 51s linear infinite reverse;
+}
+
+.wave-layer--3 .wave-drift {
+  animation: wave-drift-x 46s linear infinite;
+}
+
+.wave-layer--4 .wave-drift {
+  animation: wave-drift-x 54s linear infinite reverse;
+}
+
+.wave-layer--5 .wave-drift {
+  animation: wave-drift-x 42s linear infinite;
+}
+
+.wave-layer--6 .wave-drift {
+  animation: wave-drift-x 49s linear infinite reverse;
+}
+
+.wave-layer--7 .wave-drift {
+  animation: wave-drift-x 56s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wave-layer--1 .wave-drift,
+  .wave-layer--2 .wave-drift,
+  .wave-layer--3 .wave-drift,
+  .wave-layer--4 .wave-drift,
+  .wave-layer--5 .wave-drift,
+  .wave-layer--6 .wave-drift,
+  .wave-layer--7 .wave-drift {
+    animation: none;
+  }
+}
+
+/* 分层明度：远层更暗，近层略亮，保持冷静 monochrome */
+.wave-path--back {
+  stroke: rgba(255, 255, 255, 0.096);
+  stroke-width: 1;
+}
+
+.wave-path--mid-far {
+  stroke: rgba(210, 212, 218, 0.158);
+  stroke-width: 1;
+}
+
+.wave-path--mid {
+  stroke: rgba(255, 255, 255, 0.192);
+  stroke-width: 1.15;
+}
+
+.wave-path--front-soft {
+  stroke: rgba(185, 188, 196, 0.329);
+  stroke-width: 1;
+}
+
+.wave-path--front {
+  stroke: rgba(255, 255, 255, 0.473);
+  stroke-width: 1.1;
+}
+
+.wave-path--accent-a {
+  stroke: rgba(230, 232, 238, 0.329);
+  stroke-width: 0.9;
+}
+
+.wave-path--accent-b {
+  stroke: rgba(255, 255, 255, 0.116);
+  stroke-width: 0.85;
+}
+
+.waves-vignette {
+  mix-blend-mode: soft-light;
 }
 
 .ai-content {
-  max-width: 800px;
+  position: relative;
+  z-index: 1;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
+
 .ai-header {
   text-align: center;
+  margin-top: 50px;
   margin-bottom: 40px;
 }
 
 .ai-header h2 {
-  font-size: 28px;
-  margin-bottom: 12px;
-  color: #4a9eff;
+  font-size: 42px;
+  margin-bottom: 18px;
+  color: #ffffff;
 }
 
 .ai-subtitle {
-  font-size: 16px;
-  color: #8b9bb4;
+  font-size: 20px;
+  color: #cfcfcf88;
   margin: 0;
 }
 
 .input-section {
+  margin-top: 100px;
   margin-bottom: 30px;
 }
 
 .input-label {
   display: block;
-  font-size: 16px;
+  font-size: 26px;
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: 25px;
   color: #CCD0CF;
 }
 
 .style-input {
   width: 100%;
   padding: 16px;
-  border: 2px solid #2a4a5c;
+  height: 120px;
+  border: 1px solid #5f5f5f;
   border-radius: 8px;
-  background-color: #1a2a3a;
+  background-color: #0e0e0e;
+  box-shadow: 0 0 15px 3px  rgba(255, 255, 255, 0.35) ;
   color: #CCD0CF;
-  font-size: 14px;
+  font-size: 22px;
   font-family: inherit;
   resize: vertical;
-  transition: all 0.3s;
+  /* transition: all 0.3s; */
 }
 
 .style-input:focus {
   outline: none;
-  border-color: #4a9eff;
-  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .style-input:disabled {
@@ -120,40 +442,39 @@
 }
 
 .input-hint {
-  font-size: 12px;
-  color: #8b9bb4;
-  margin-top: 8px;
+  font-size: 18px;
+  color: #CCD0CF;
+  margin-top: 20px;
   margin-bottom: 0;
 }
 
 .button-section {
+  margin-top: 80px;
   margin-bottom: 20px;
   text-align: center;
 }
 
 .generate-button {
-  background: linear-gradient(135deg, #4a9eff, #3a8eef);
+  background: #252525;
+  border: 1px solid #5f5f5f;
   color: white;
-  border: none;
   border-radius: 8px;
   padding: 16px 32px;
-  font-size: 16px;
+  font-size: 24px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
 }
 
 .generate-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3a8eef, #2a7edf);
+  background: #ccc;
+  color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
 }
 
 .generate-button:disabled {
-  background: #2a4a5c;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
