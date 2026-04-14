@@ -18,7 +18,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const openai = new OpenAI({
   baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
   // "sk-77394cf256604205baf53b20d4e63be3",
 });
 
