@@ -6,7 +6,8 @@ const pool = new Pool({
     user: 'postgres',           // 【修改】你的 pgAdmin 用户名，默认 postgres
     host: 'localhost',          // 数据库在本机运行
     database: 'postgres', // 【修改】你创建的数据库名
-    password: '060722wqlinfpjx',        // 【修改】你的 pgAdmin 密码
+    // password: '060722wqlinfpjx',        // 【修改】你的 pgAdmin 密码
+    password: 'MyStr0ng!P@ssw0rd',        // 【修改】你的 pgAdmin 密码
     port: 5432,                 // PostgreSQL 默认端口
 });
 
