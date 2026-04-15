@@ -5,22 +5,31 @@ import { createServer } from 'http';
 import { Server } from 'socket.io'
 // Please install OpenAI SDK first: `npm install openai`
 const app = express();
-app.use(cors());
+
+// ✅ 配置 CORS
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',           // 本地开发
+    'http://127.0.0.1:5173',           // 本地开发
+    'http://113.44.82.167',            // 生产环境（无端口）
+    'http://113.44.82.167:80',         // 生产环境（HTTP）
+    'http://113.44.82.167:7220'        // 生产环境（直接访问后端）
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
 const httpServer = createServer(app);
 
-
-const clientUrl = process.env.NODE_ENV === 'production'
-  ? 'http://你的服务器公网IP'  // 改为你的服务器IP
-  : 'http://localhost:5173';
-
+// Socket.IO 也需要配置 CORS
 export const io = new Server(httpServer, {
-  cors: {
-    origin: clientUrl,
-    methods: ['GET', 'POST']
-  }
+  cors: corsOptions
 });
-
 //AI接口
 import OpenAI from "openai";
 import dotenv from 'dotenv';
