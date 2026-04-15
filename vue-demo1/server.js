@@ -8,8 +8,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const httpServer = createServer(app);
+
+
+const clientUrl = process.env.NODE_ENV === 'production'
+  ? 'http://你的服务器公网IP'  // 改为你的服务器IP
+  : 'http://localhost:5173';
+
 export const io = new Server(httpServer, {
-  cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'] }
+  cors: {
+    origin: clientUrl,
+    methods: ['GET', 'POST']
+  }
 });
 
 //AI接口
@@ -505,6 +514,6 @@ io.on('connection', (socket) => {
 // 启动服务
 const PORT = 7220;
 httpServer.listen(PORT, () => {
-  console.log(`API服务器运行在 http://localhost:${PORT}`);
+  // console.log(`API服务器运行在 http://localhost:${PORT}`);
   console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });
