@@ -56,7 +56,7 @@
     </div>
   </div>
   <div class="waves-container">
-    
+
   </div>
 </template>
 
@@ -100,8 +100,10 @@ const handleLogin = async () => {
     router.push('/')
   } catch (err) {
     // 处理错误
-    if (err.response) {
+    // @ts-expect-error: 后端错误结构已知
+    if ((err).response) {
       // 服务器返回错误
+      // @ts-expect-error: 后端错误结构已知
       error.value = err.response.data.error || '登录失败'
     } else {
       // 网络错误等
@@ -131,8 +133,10 @@ const handleRegister = async () => {
     router.push('/')
   } catch (err) {
     // 处理错误
+    // @ts-expect-error: 后端错误结构已知
     if (err.response) {
       // 服务器返回错误
+      // @ts-expect-error: 后端错误结构已知
       error.value = err.response.data.error || '注册失败'
     } else {
       // 网络错误等
