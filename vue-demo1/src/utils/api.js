@@ -20,8 +20,6 @@ import axios from 'axios'
 // 修改为相对路径，让 Nginx 或同域处理
 const baseURL = '/api'
 
-// 或者统一使用后端地址，但在生产环境用 Nginx 代理
-const baseURL = '/api'  // 这样请求会发到 http://113.44.82.167/api
 
 const request = axios.create({
   baseURL,
