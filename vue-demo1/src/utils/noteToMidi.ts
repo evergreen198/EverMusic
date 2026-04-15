@@ -28,7 +28,7 @@ export function noteNameToMidi(note: string): number | null {
   if (!match) return null;
 
   const [, letterRaw, accidental, octaveRaw] = match;
-  const letter = letterRaw.toUpperCase();
+  const letter = letterRaw!.toUpperCase();
   const key = (letter + (accidental || '')) as keyof typeof NOTE_OFFSETS;
   const semitone = NOTE_OFFSETS[key];
   if (semitone === undefined) return null;

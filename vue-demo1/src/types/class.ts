@@ -11,6 +11,7 @@ import {
   midiToNoteName
 } from '@/utils/noteToMidi'
 import type { InstrumentId } from '@/utils/materials'
+import type { Frequency } from "tone/build/esm/core/type/Units";
 // const TRACK_TOP = 40
 const TRACK_HEIGHT = 30
 
@@ -85,42 +86,42 @@ export class Track {
         switch (clip.rhythmId) {
           case 'whole':
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '1n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '1n', time)
             }, '1n', startTime)
             break
 
           case 'half':
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '2n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '2n', time)
             }, '2n', startTime)
             break
 
           case 'quarter':
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '4n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '4n', time)
             }, '4n', startTime)
             break
 
           case 'eighth':
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '8n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '8n', time)
             }, '8n', startTime)
             break
 
           case 'sixteenth':
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '16n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '16n', time)
             }, '16n', startTime)
             break
 
           case 'dottedhalf':
             // 附点二分音符：1/2 + 1/4 = 3/4
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '2n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '2n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '4n',
-                time + Tone.Time('2n')
+                time + Tone.Time('2n').toSeconds()
               )
             }, '2n.', startTime)
             break
@@ -128,11 +129,11 @@ export class Track {
           case 'dottedquarter':
             // 附点四分音符：1/4 + 1/8 = 3/8
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '4n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '4n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '8n',
-                time + Tone.Time('4n')
+                time + Tone.Time('4n').toSeconds()
               )
             }, '4n.', startTime)
             break
@@ -140,16 +141,16 @@ export class Track {
           case 'dottedquarternote':
             // 大附点：1/4 + 1/4 + 1/8
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '4n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '4n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '4n',
-                time + Tone.Time('4n')
+                time + Tone.Time('4n').toSeconds()
               )
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '8n',
-                time + Tone.Time('4n') + Tone.Time('4n')
+                time + Tone.Time('4n').toSeconds() + Tone.Time('4n').toSeconds()
               )
             }, '2n', startTime)
             break
@@ -157,16 +158,16 @@ export class Track {
           case 'syncopationLarge':
             // 大切分：1/8 + 1/4 + 1/8
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '8n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '8n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '4n',
-                time + Tone.Time('8n')
+                time + Tone.Time('8n').toSeconds()
               )
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '8n',
-                time + Tone.Time('8n') + Tone.Time('4n')
+                time + Tone.Time('8n').toSeconds() + Tone.Time('4n').toSeconds()
               )
             }, '4n', startTime)
             break
@@ -174,16 +175,16 @@ export class Track {
           case 'syncopationSmall':
             // 小切分：1/16 + 1/8 + 1/16
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '16n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '16n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '8n',
-                time + Tone.Time('16n')
+                time + Tone.Time('16n').toSeconds()
               )
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '16n',
-                time + Tone.Time('16n') + Tone.Time('8n')
+                time + Tone.Time('16n').toSeconds() + Tone.Time('8n').toSeconds()
               )
             }, '4n', startTime)
             break
@@ -191,25 +192,25 @@ export class Track {
           case 'eighthTriplet':
             // 八分三连音：1/12 + 1/12 + 1/12
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '12n', time)
-              sampler.triggerAttackRelease(notes as any, '12n', + Tone.Time('12n'))
-              sampler.triggerAttackRelease(notes as any, '12n', time + Tone.Time('12n') * 2)
+              sampler.triggerAttackRelease(notes as Frequency, '12n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '12n', + Tone.Time('12n'))
+              sampler.triggerAttackRelease(notes as Frequency, '12n', time +( Tone.Time('12n').toSeconds()) * 2)
             }, '4n', startTime)
             break
 
           case 'frontEighthBackSixteenth':
             // 前八后十六：1/8 + 1/16 + 1/16
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '8n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '8n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '16n',
-                time + Tone.Time('8n')
+                time + Tone.Time('8n').toSeconds()
               )
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '16n',
-                time + Tone.Time('8n') + Tone.Time('16n')
+                time + Tone.Time('8n').toSeconds() + Tone.Time('16n').toSeconds()
               )
             }, '4n', startTime)
             break
@@ -217,23 +218,23 @@ export class Track {
           case 'frontSixteenthBackEighth':
             // 前十六后八：1/16 + 1/16 + 1/8
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '16n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '16n', time)
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '16n',
-                time + Tone.Time('16n')
+                time + Tone.Time('16n').toSeconds()
               )
               sampler.triggerAttackRelease(
-                notes as any,
+                notes as Frequency,
                 '8n',
-                time + Tone.Time('16n') * 2
+                time + (Tone.Time('16n').toSeconds()) * 2
               )
             }, '4n', startTime)
             break
 
           default:
             Tone.getTransport().scheduleRepeat((time) => {
-              sampler.triggerAttackRelease(notes as any, '4n', time)
+              sampler.triggerAttackRelease(notes as Frequency, '4n', time)
             }, '4n', startTime)
         }
       })
@@ -355,10 +356,10 @@ export class Clip {
     this.deleteButton.visible = false
     this.deleteButton.eventMode = 'static'
     this.deleteButton.cursor = 'pointer'
-    this.deleteButton.on('pointerdown', (e: any) => {
+    this.deleteButton.on('pointerdown', (e) => {
       e.stopPropagation()
     })
-    this.deleteButton.on('pointertap', (e: any) => {
+    this.deleteButton.on('pointertap', (e) => {
       e.stopPropagation()
       this.delete()
     })
@@ -388,7 +389,7 @@ export class Clip {
     this.deleteButton.visible = false
   }
   changeLocation = () => { }
-  onPointerMove = (e: any) => {
+  onPointerMove = (e) => {
     const local = e.getLocalPosition(this.container)
     if (local.x < 6 || local.x > this.itemWidth - 6) {
       this.container.cursor = 'ew-resize'
@@ -396,7 +397,7 @@ export class Clip {
       this.container.cursor = 'pointer'
     }
   }
-  onPointerDown = (e: any) => {
+  onPointerDown = (e) => {
     e.stopPropagation()
 
     const local = e.getLocalPosition(this.container)

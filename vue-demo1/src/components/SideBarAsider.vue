@@ -1,5 +1,5 @@
 <template>
-    <div class="Aside">
+    <div class="SideBarAsider">
         <aside ref="aside" class="left">
           <div class="icon-img">1
               <img src="" alt="">

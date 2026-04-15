@@ -103,7 +103,7 @@
         </form>
       </div>
     </div>
-    <Aside></Aside>
+    <SideBarAsider></SideBarAsider>
     <div class="right">
       <!-- 用户信息卡片 -->
       <div class="user-profile">
@@ -171,14 +171,14 @@
 </template>
 
 <script setup lang="ts">
-import Aside from '../src/components/Aside.vue'
+import SideBarAsider from '../src/components/SideBarAsider.vue'
 import { ref, onMounted, onUnmounted,onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import {getProjectList,updateUser } from '../src/utils/api.js';
 
 const router = useRouter()
 const editorHandle=ref(false)
-const fileInput = ref(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 function handleLogout() {
   // 删除localStorage中的认证信息
@@ -295,7 +295,7 @@ const handleAvatarChange = (event) => {
     // 预览头像
     const reader = new FileReader()
     reader.onload = (e) => {
-      formData.value.avatar_url = e.target.result
+      formData.value.avatar_url = e.target!.result as string
     }
     reader.readAsDataURL(file)
   }
@@ -348,7 +348,7 @@ const handleSubmit = async () => {
     return
   }
 
-  const userid=JSON.parse(localStorage.getItem("user")).id
+  const userid=JSON.parse(localStorage.getItem("user") as string).id
   isSubmitting.value = true
 
   try {
@@ -396,7 +396,13 @@ const handleSubmit = async () => {
 //     password_hash:string,
 //     username:string
 //   }
-const user = ref<any>({
+interface userData{
+  id:number,
+  username:string,
+  bio:string,
+  avatar_url:string
+}
+const user = ref<userData>({
   id:0,
   username: '音乐创作者',
   bio: '热爱音乐，享受创作的过程，希望用音乐传递美好。',
@@ -415,7 +421,7 @@ const works = ref<Work[]>([])
 
 // 加载状态
 const loading = ref(true)
-const error = ref('')
+// const error = ref('')
 
 // 从localStorage获取用户信息
 const loadUserInfo = () => {
@@ -473,11 +479,13 @@ async function LoadHistoryProject(){
 
   try {
     const response = await getProjectList(userId);
+    //@ts-expect-error 已在后端设置返回值为与Work[]的同类型
     works.value=response
     console.log(works.value);
 
   } catch (error) {
     console.error('获取历史作品失败:', error);
+    //@ts-expect-error 已在后端设置erroe返回值
     error.value = '获取历史作品失败，请重试'
     works.value = []  // 出错时设为空数组
   } finally {
@@ -727,9 +735,7 @@ const handleLoadProject = (projectId: number) => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.user-function{
 
-}
 /* 修改资料按钮 */
 .edit-btn,.logout-btn{
   padding: 8px 16px;
@@ -797,7 +803,7 @@ const handleLoadProject = (projectId: number) => {
 /* 用户信息卡片 */
 .user-profile {
   background-color: white;
-  
+
   background-color: #0e0e0e;
   border-radius: 12px;
   padding: 30px;
@@ -868,7 +874,7 @@ const handleLoadProject = (projectId: number) => {
 .user-works {
   background-color: white;
   background-color: #0e0e0e;
-  
+
   border-radius: 12px;
   padding: 30px;
   border: 0.1px solid #575757;

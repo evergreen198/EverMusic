@@ -1,6 +1,6 @@
 <template>
     <div class="Library">
-      <Aside></Aside>
+      <SideBarAsider></SideBarAsider>
       <div class="right">
         <div class="sample">
         <h1>This is Library</h1>
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import Aside from '../src/components/Aside.vue'
+import SideBarAsider from '../src/components/SideBarAsider.vue'
 
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <div class="AI-editor-layout">
-    <Aside></Aside>
+    <SideBarAsider></SideBarAsider>
     <div class="AI-editor">
 
       <div class="ai-editor-bg" aria-hidden="true">
@@ -531,7 +531,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { generateMusic } from '../src/utils/api.js';
-import Aside from '../src/components/Aside.vue';
+import SideBarAsider from '../src/components/SideBarAsider.vue';
 
 // 路由
 const router = useRouter();
@@ -559,6 +559,7 @@ const handleGenerate = async () => {
 
     if (musicData ) {
       // 存储到 sessionStorage 以便在 DefaultLayout 中读取
+      //@ts-expect-error 已经在server.js设置musicData(generateMusic返回值)为string
       sessionStorage.setItem('aiGeneratedMusic', musicData);
       // 跳转到 DefaultLayout
       router.push('/');

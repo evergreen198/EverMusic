@@ -52,6 +52,20 @@ export const collaborativeEvents = {
 
 };
 
+interface titleRemoteData{
+  projectId:number,
+  userId:number,
+  title:string,
+  timestamp:number
+}
+
+interface descriptionRemoteData{
+  projectId:number,
+  userId:number,
+  description:string,
+  timestamp:number
+}
+
 export const collaborativeEventsDefault = {
   // 编辑项目标题
   editTitle: (projectId: number, title: string) => {
@@ -135,8 +149,8 @@ export function registerSocketListeners(callbacks: {
   });
 }
 export function registerSocketListenersDefault(callbacks: {
-  onTitleUpdated: (data: unknown) => void;
-  onDescriptionUpdated: (data: unknown) => void;
+  onTitleUpdated: (data:titleRemoteData) => void;
+  onDescriptionUpdated: (data:descriptionRemoteData) => void;
 
 }) {
   // 监听项目标题更新
@@ -151,10 +165,13 @@ export function registerSocketListenersDefault(callbacks: {
     callbacks.onDescriptionUpdated(data);
   });
 
-
+}
+interface remoteBpmdata {
+  type: 'bpm',
+  bpm: number
 }
 export function registerSocketListenersBpmSlider(callbacks: {
-  onBpmUpdated: (data: unknown) => void;
+  onBpmUpdated: (data: remoteBpmdata) => void;
 }) {
   // 监听项目速度更新
   socket.on('bpm-updated', (data) => {

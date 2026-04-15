@@ -1,4 +1,4 @@
-<!-- filepath: c:\Users\文\Desktop\前端\复健\vue-demo1\src\components\VolumeSlider.vue -->
+
 <template>
     <div class="bpm-slider">
       <p for="bpm">bpm {{ Bpm }}</p>
@@ -19,7 +19,10 @@
 
   const Bpm = ref(120);
   const isLocalOperation=ref(false)
-
+  interface remoteBpmdata {
+      type: 'bpm',
+      bpm: number 
+    }
   const props = defineProps({
     projectId: {
       type: Number,
@@ -56,7 +59,7 @@
     watch(() => props.isMultiUser, (newVal) => {
       if (newVal) {
         registerSocketListenersBpmSlider({
-          onBpmUpdated: (data) => {
+          onBpmUpdated: (data:remoteBpmdata) => {
             isLocalOperation.value = false; // 标记为远程更新
             Bpm.value = data.bpm;
           }

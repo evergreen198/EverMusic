@@ -1,5 +1,4 @@
 import * as Tone from 'tone'
-import { TransportClass } from 'tone/build/esm/core/clock/Transport'
 export interface MusicMaterial{
     id:number,
     name:string,
@@ -7,7 +6,7 @@ export interface MusicMaterial{
     url:string
 }
 const pianoUrl='../../public/materials/piano/'
-const guitarUrl='../../public/materials/guitar/'
+// const guitarUrl='../../public/materials/guitar/'
 export const musicMaterials:MusicMaterial[]=[
     {
         id:1,
@@ -38,16 +37,16 @@ export function StartPlay(){
     Tone.getTransport().schedule(() => {
         synth.triggerAttackRelease("E4", 1,2)
       }, 5)
-      
+
       Tone.getTransport().schedule(() => {
         synth.triggerAttackRelease("G4", 1,2)
       }, 5)
-      
+
       Tone.getTransport().start()
 
 }
 
-export 
+export
     function playAll(note:string):void{
         const sampler = new Tone.Sampler({
             urls: {

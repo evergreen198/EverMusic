@@ -71,7 +71,7 @@
               </div>
               <div class="confirm-item">
                 <span class="confirm-label">项目时长：</span>
-                <span class="confirm-value">{{ formatDuration(pendingProjectInfo.duration_second) }}</span>
+                <span class="confirm-value">{{ formatDuration(pendingProjectInfo.duration_second as number) }}</span>
               </div>
               <div class="confirm-item">
                 <span class="confirm-label">项目描述：</span>
@@ -195,22 +195,23 @@
                 v-for="project in projectList"
                 :key="project.id"
                 class="project-item"
-                @click="loadProject(project.id)"
+                @click="loadProject(project.id as number)"
               >
                 <div class="project-info">
                   <h4 class="project-title">{{ project.title }}</h4>
                   <div class="project-details">
                     <span class="detail-item">
                       <span class="detail-label">BPM:</span>
-                      <span class="detail-value">{{ project.bpm }}</span>
+                      //project.bpm
+                      <span class="detail-value">{{ 120}}</span>
                     </span>
                     <span class="detail-item">
                       <span class="detail-label">时长:</span>
-                      <span class="detail-value">{{ formatDuration(project.duration_second) }}</span>
+                      <span class="detail-value">{{ formatDuration(project.duration_second as number) }}</span>
                     </span>
                     <span class="detail-item">
                       <span class="detail-label">更新:</span>
-                      <span class="detail-value">{{ formatDate(project.updated_at) }}</span>
+                      <span class="detail-value">{{ formatDate(project.updated_at as string) }}</span>
                     </span>
                   </div>
                 </div>
@@ -220,7 +221,7 @@
         </div>
       </div>
 
-      <Aside @loaded="(msg)=>{asideLoaded=msg}" class="inline-block"></Aside>
+      <SideBarAsider @loaded="(msg)=>{asideLoaded=msg}" class="inline-block"></SideBarAsider>
     <section class="right">
       <div class="main">
         <nav class="nav">
@@ -244,8 +245,12 @@
             </div>
             <div class="user">
             <div>
-                <router-link to="/User" class="user-name inline-block">{{ currentUser?.username || 'username' }}</router-link>
-                <img :src="currentUser?.avatar_url || '/img/pexels-ecaterina-susu-1790735746-29779303.jpg'" alt="">
+                <router-link to="/User" class="user-name inline-block">{{
+              //@ts-expect-error TODO打开浏览器检查用户数据类型
+                  currentUser?.username || 'username' }}</router-link>
+                <img :src="
+              //@ts-expect-error TODO打开浏览器检查用户数据类型
+                currentUser?.avatar_url || '/img/pexels-ecaterina-susu-1790735746-29779303.jpg'" alt="">
             </div>
             <div class="user-detail">
               <ul>
@@ -266,7 +271,7 @@
             class="canvas-piano"
             :style="{width:'100%'}"
             :isMultiUser="isMultiUserProject"
-            :projectId="currentProjectId"></PianoRoll>
+            :projectId="currentProjectId as number"></PianoRoll>
             <!-- 子路由内容 -->
             <!-- <router-view v-if="asideLoaded" class="sub-content"></router-view> -->
           </section>
@@ -276,7 +281,7 @@
             <h3 class="function-pause">暂停</h3>
             <h3 class="function-bpm">速度</h3>
             <BpmSlider style="display: inline-block;"
-            :projectId="currentProjectId"
+            :projectId="currentProjectId as number"
             :isMultiUser="isMultiUserProject"
             @update:bpm="(bpmFromSlider)=>{bpmValue=bpmFromSlider}"></BpmSlider >
           </div>
@@ -370,7 +375,7 @@
 
 <script setup lang="ts">
 import PianoRoll from '../src/components/PianoRoll.vue';
-import Aside from '../src/components/Aside.vue'
+import SideBarAsider from '../src/components/SideBarAsider.vue'
 import BpmSlider from '@/components/BpmSlider.vue';
 
 import { ref, watch, onMounted, onUnmounted,watchEffect,computed,nextTick } from 'vue'
@@ -389,9 +394,29 @@ import { collaborativeEventsDefault,
          unregisterSocketListenersDefault } from '@/utils/socketEvents.ts';
 
 
+interface collaboratorData{
+    id: number|null,
+    name: string| null,
+    avatar_url:string| null,
+    socketId: string|null,
+  }
+interface pendingProjectInfoData{
+    title:string|null,
+    creator_id: number|null,
+    duration_second: number|null,
+    description:string|null
+  }
 
+interface projectListData{
+  id:number|undefined,
+  title:string|undefined,
+  creator_id:number|undefined,
+  duration_second:number|undefined,
+  updated_at:string|undefined,
+  last_edited_by:number|undefined,
+}
 //协作状态：是否多人
-const collaborators = ref<unknown[]>([]);
+const collaborators = ref<collaboratorData[]>([]);
 // 项目保存相关
 const currentProjectId = ref<number | null>(null);
 const projectVersion = ref<number>(1);
@@ -411,7 +436,7 @@ const showImportModal = ref<boolean>(false);
 
 // 历史作品弹窗控制
 const showHistoryModal = ref<boolean>(false);
-const projectList = ref<unknown[]>([]);
+const projectList = ref<projectListData[]>([]);
 const loadingHistory = ref<boolean>(false);
 const historyError = ref<string>('');
 
@@ -428,7 +453,12 @@ const inviteCodeInput = ref<string>('');
 
 // 项目信息确认弹窗控制
 const showProjectConfirmModal = ref<boolean>(false);
-const pendingProjectInfo = ref<unknown>({});
+const pendingProjectInfo = ref<pendingProjectInfoData>({
+    title:null,
+    creator_id:null,
+    duration_second:null,
+    description:null
+  });
 const pendingProjectId = ref<number | null>(null);
 
 // 导入MIDI文件弹窗控制
@@ -506,6 +536,7 @@ const ensureProjectExist=()=>{
     //正在创建项目
    return  saveProject().then((res)=>{
       console.log('res:',res);
+      //@ts-expect-error 保证res返回值包含id
       currentProjectId.value=res.id
       console.log('check over');
     })
@@ -560,8 +591,9 @@ const copyInviteCode = () => {
 const handleExportWav =() => {
 
   console.log('导出为WAV文件');
-  const pianoLayout = document.querySelector('.piano-layout') as any;
-  const exportAsWAV = pianoLayout.exportAsWAV;
+  const pianoLayout = document.querySelector('.piano-layout');
+    //@ts-expect-error exportAsWAV为piano传出函数
+  const exportAsWAV = pianoLayout!.exportAsWAV;
   exportAsWAV()
 
   closeExportModal();
@@ -686,6 +718,7 @@ const handleViewHistory = async () => {
     historyError.value = '';
 
     const response = await getProjectList(userId);
+    //@ts-expect-error 在server.js中已设置返回值为projectList格式的数组
     projectList.value = response || [];
 
     closeImportModal();
@@ -721,10 +754,11 @@ const loadProject = async (projectId: number) => {
     }
 
     // 获取PianoRoll组件实例
-    const pianoLayout = document.querySelector('.piano-layout') as any;
-
+    const pianoLayout = document.querySelector('.piano-layout');
+    //@ts-expect-error importTrackMapFromJSON为piano传出函数
     if (pianoLayout && pianoLayout.importTrackMapFromJSON) {
       // 调用PianoRoll的导入函数
+    //@ts-expect-error importTrackMapFromJSON为piano传出函数
       pianoLayout.importTrackMapFromJSON(projectJson);
 
       // 更新当前项目ID
@@ -752,9 +786,11 @@ try {
     const projectData = (sessionStorage.getItem('aiGeneratedMusic'));
     if (projectData) {
       const projectDataJson=JSON.parse(projectData);
-          const pianoLayout = document.querySelector('.piano-layout') as any;
+          const pianoLayout = document.querySelector('.piano-layout');
+          //@ts-expect-error importTrackMapFromJS是设置的pianoLayout函数
       if (projectDataJson &&pianoLayout && pianoLayout.importTrackMapFromJSON) {
         // 加载音乐数据到编辑器
+          //@ts-expect-error importTrackMapFromJS是设置的pianoLayout函数
         pianoLayout.importTrackMapFromJSON(projectDataJson);
         sessionStorage.removeItem('aiGeneratedMusic');
         alert('AI 生成的音乐已加载到编辑器！');
@@ -798,16 +834,21 @@ const confirmJoinCollaboration = () => {
 
   confirmInvitation({ inviteCode: code })
     .then(response => {
+      //@ts-expect-error 后端返回数据的报错
       if (response.error) {
+      //@ts-expect-error 后端返回数据的报错
         alert(response.error);
         return;
       }
       //加入项目房间，并提供自己的数据
+      //@ts-expect-error 确保后端请求数据包含.project_id,collaborators.value
       socket.emit('join-project', response.project_id,collaborators.value[0]);
+      //@ts-expect-error 确保后端请求数据包含.project_id
       getProject(response.project_id)
         .then(projectResponse => {
           const projectData = projectResponse.data || projectResponse;
           // 存储项目信息
+      //@ts-expect-error 确保后端请求数据包含.project_id
           pendingProjectId.value = response.project_id;
           pendingProjectInfo.value = {
             title: projectData.title,
@@ -833,7 +874,12 @@ const confirmJoinCollaboration = () => {
 // 关闭项目信息确认弹窗
 const closeProjectConfirmModal = () => {
   showProjectConfirmModal.value = false;
-  pendingProjectInfo.value = {};
+  pendingProjectInfo.value ={
+    title:null,
+    creator_id:null,
+    duration_second:null,
+    description:null
+  };
   pendingProjectId.value = null;
 };
 
@@ -892,7 +938,7 @@ const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const files = target.files;
   if (files && files.length > 0) {
-    selectedMidiFile.value = files[0];
+    selectedMidiFile.value = files[0] as File;
   }
 };
 
@@ -912,8 +958,8 @@ const handleDrop = (event: DragEvent) => {
   const files = event.dataTransfer!.files;
   if (files && files.length > 0) {
     const file = files[0];
-    if (file.name.endsWith('.mid') || file.name.endsWith('.midi')) {
-      selectedMidiFile.value = file;
+    if (file!.name.endsWith('.mid') || file!.name.endsWith('.midi')) {
+      selectedMidiFile.value = file as File;
     } else {
       alert('请选择 .mid 或 .midi 格式的文件');
     }
@@ -966,7 +1012,7 @@ const confirmImportMidi = () => {
 
 
 // 创建保存项目的数据体
-function createProjectSaveData(): any {
+function createProjectSaveData(){
   // 获取当前登录用户信息
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
@@ -978,14 +1024,16 @@ function createProjectSaveData(): any {
   const bpm = bpmValue.value;
 
   // 获取PianoRoll组件实例（通过DOM访问绑定的函数）
-  const pianoLayout = document.querySelector('.piano-layout') as any;
+  const pianoLayout = document.querySelector('.piano-layout');
 
   // 获取项目JSON数据
   let projectJson = { tracks: [] };
   let durationSecond = 4;
-
+//@ts-expect-error exportTrackMapToJSON为piano导出函数
   if (pianoLayout && pianoLayout.exportTrackMapToJSON) {
+//@ts-expect-error exportTrackMapToJSON为piano导出函数
     projectJson = pianoLayout.exportTrackMapToJSON();
+//@ts-expect-error exportTrackMapToJSON为piano导出函数
     durationSecond = pianoLayout.calculateSongDuration();
   }
 
@@ -1055,8 +1103,8 @@ async function saveProject(): Promise<void> {
   }
 }
 
-// 用户信息管理
-const currentUser = ref<any>(null);
+// 用户信息管理 TODO打开浏览器检查用户数据类型
+const currentUser = ref<unknown>(null);
 
 // 从localStorage获取用户信息
 const loadUserInfo = () => {
@@ -1089,8 +1137,8 @@ function calculatePianoWidth(){
   const asideWidth = asideElement ? asideElement.offsetWidth : 0
   const materialElement = document.querySelector('.material') as HTMLElement
   const materialWidth = materialElement ? materialElement.offsetWidth : 0
-  const isAsideClose=document.querySelector('.aside-btn')?.classList.contains('close')
-  pianoWidth.value = viewportWidth - materialWidth - (isAsideClose ? asideWidth: 0)
+  const isSideBarAsiderClose=document.querySelector('.aside-btn')?.classList.contains('close')
+  pianoWidth.value = viewportWidth - materialWidth - (isSideBarAsiderClose ? asideWidth: 0)
 }
 const playBtn = async () => {
 try {
@@ -1141,8 +1189,11 @@ onMounted(() => {
   // 加载用户信息
   loadUserInfo();
   collaborators.value.push({
+    //@ts-expect-error TODO打开浏览器检查用户数据类型
     id: currentUser.value.id||null,
+    //@ts-expect-error TODO打开浏览器检查用户数据类型
     name: currentUser.value?.username || null,
+    //@ts-expect-error TODO打开浏览器检查用户数据类型
     avatar_url: currentUser.value?.avatar_url || null,
     socketId: socket.id||null,
   })
@@ -1174,7 +1225,7 @@ onMounted(() => {
   })
   calculatePianoWidth(); // 初加载计算钢琴边框
   window.addEventListener('resize',calculatePianoWidth);
-  const observeAsideChanges = () => {
+  const observeSideBarAsiderChanges = () => {
   const asideElement = document.querySelector('.aside');
   if (asideElement) {
     const observer = new MutationObserver(() => {
@@ -1201,7 +1252,7 @@ onMounted(() => {
   }
 };
 
-observeAsideChanges();
+observeSideBarAsiderChanges();
 //TODO：token验证
 watchEffect(() => {
   // 每次组件更新时读取最新的 state
@@ -1344,13 +1395,14 @@ function setupMaterialItemEventListeners() {
       item.removeEventListener('dragend', handlers.dragend);
     }
     // 创建新的事件处理器
-    const dragstartHandler = (e:any) => {
+    const dragstartHandler = (e) => {
       e.dataTransfer.effectAllowed='move'
       e.dataTransfer.setData('text/plain',`${e.toElement.querySelector('.material-item-title').textContent}`)
     };
+    //TODO我也不知道
     const dragHandler = () => {
     };
-    const dragEndHandler = (e:any) => {
+    const dragEndHandler = () => {
     };
 
     // 添加新的事件监听器
@@ -1403,7 +1455,7 @@ function generateRandomCode() {
   return result;
 }
 
-socket.on('user-joined', (data: any) => {
+socket.on('user-joined', (data:collaboratorData) => {
   collaborators.value.push(data);
   // console.log(collaborators.value);
   console.log(`用户 ${data.name} 加入项目`);

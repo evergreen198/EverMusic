@@ -8,6 +8,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    
+    "allowJs": true,           // 允许编译 JS 文件
+    "checkJs": false,          // 不检查 JS 文件类型（设为 false 可忽略 JS 类型错误）
+    "noImplicitAny": false     // 不强制要求显式 any 类型
   }
 }

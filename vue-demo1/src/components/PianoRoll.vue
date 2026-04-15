@@ -18,15 +18,16 @@ import {Application,
 import * as Tone from 'tone'
 // import { Midi } from '@tonejs/midi'
 import toWav from "audiobuffer-to-wav"
-import socket from '@/utils/socket'
+// import socket from '@/utils/socket'
 import { collaborativeEvents,
          registerSocketListeners,
          unregisterSocketListeners} from '@/utils/socketEvents'
-import { trackMap,Clip,Track,ClipInteraction,instrumentId } from "@/types/class"
+import { trackMap,Clip,Track,ClipInteraction} from "@/types/class"
 import type { InstrumentId } from '@/utils/materials'
+import type { Frequency } from "tone/build/esm/core/type/Units";
 // import boardcastAdd from '@/server.js'
 let fatherWidth:number = 0;
-let lastX = 0, lastY = 0;
+let lastX = 0;
 
 const TRACK_TOP = 40
 const TRACK_HEIGHT = 30
@@ -40,6 +41,26 @@ isMultiUser: {
   default: false
 }
 });
+interface toExportClipData {
+  clip_id: number,        // 或 clip_id，建议统一命名
+  startsecond: number,
+  durationsecond: number,
+  instrumentId: string,  // 你代码里是 InstrumentId 类型
+  rhythmId: string,      // 你代码里是 string
+  isChord: boolean,
+  notes: string[],
+  content: string,
+  itemWidth: number,
+  itemHeight: number,
+}
+
+interface toExportTrackData{
+    track_id:number,
+    midiChannel:number,
+    volume:number,
+    clips: toExportClipData[]
+  }
+
 
 //！响应式canvas
 const pianoCanvas = ref<HTMLCanvasElement | null>(null);
@@ -49,7 +70,7 @@ const positionState = reactive({
 });
 //设置字体
 BitmapFont.install({
-  name:'mufont',
+  name:'myfont',
   style:{
     fontFamily:'Arial'
   }
@@ -61,11 +82,16 @@ onMounted(async () => {
   const pianoLayout = document.querySelector('.piano-layout');
   if (pianoLayout) {
     // (pianoLayout as HTMLElement & { calculateSongDuration: () => number }).calculateSongDuration = calculateSongDuration;
-    (pianoLayout as any).exportTrackMapToJSON = exportTrackMapToJSON;
-    (pianoLayout as any).calculateSongDuration = calculateSongDuration;
-    (pianoLayout as any).importTrackMapFromJSON = importTrackMapFromJSON;
-    (pianoLayout as any).trackMap = trackMap;
-    (pianoLayout as any).exportAsWAV = exportAsWAV;
+    //@ts-expect-error piano导出函数
+    (pianoLayout).exportTrackMapToJSON = exportTrackMapToJSON;
+    //@ts-expect-error piano导出函数
+    (pianoLayout).calculateSongDuration = calculateSongDuration;
+    //@ts-expect-error piano导出函数
+    (pianoLayout).importTrackMapFromJSON = importTrackMapFromJSON;
+    //@ts-expect-error piano导出函数
+    (pianoLayout).trackMap = trackMap;
+    //@ts-expect-error piano导出函数
+    (pianoLayout).exportAsWAV = exportAsWAV;
   }
     //挂载pixi-canvas
   const pixiApp = new Application()
@@ -83,7 +109,7 @@ onMounted(async () => {
   pixiApp.canvas.style.height=1600+'px'
   document.querySelector('.piano-layout')?.appendChild(pixiApp.canvas)
 
-  function importTrackMapFromJSON(projectData: any): void {
+  function importTrackMapFromJSON(projectData): void {
 // 清空现有trackMap
 trackMap.forEach(track => {
   track.clips.forEach(clip => {
@@ -97,14 +123,14 @@ Clip.nextClipId = 0;
 
 // 导入tracks
 if (projectData.tracks && Array.isArray(projectData.tracks)) {
-  projectData.tracks.forEach((trackData: any) => {
+  projectData.tracks.forEach((trackData) => {
     const track = new Track(trackData.track_id);
     track.midiChannel = trackData.midiChannel;
     track.volume = trackData.volume;
 
     // 导入clips
     if (trackData.clips && Array.isArray(trackData.clips)) {
-      trackData.clips.forEach((clipData: any) => {
+      trackData.clips.forEach((clipData) => {
         // 计算位置
         const x = clipData.startsecond * 30; // tick转像素
         const y = TRACK_TOP + (trackData.track_id) * TRACK_HEIGHT;
@@ -154,7 +180,7 @@ if (projectData.tracks && Array.isArray(projectData.tracks)) {
 console.log('项目数据导入成功');
   }
 
-  function reconstructClip(clipData: any): Clip {
+  function reconstructClip(clipData): Clip {
   const clip = new Clip(
     clipData.content,
     clipData.startsecond * 30,
@@ -310,7 +336,7 @@ function getCurrentTrackId(clip: Clip): number {
  * @param operation 操作对象
  * @param isRemote 是否为远程操作
  */
- function applyOperation(operation: any, isRemote: boolean) {
+ function applyOperation(operation, isRemote: boolean) {
   const { type, trackId, clipId, clip, updates, newTrackId, position } = operation;
 
   switch (type) {
@@ -420,7 +446,7 @@ if( pianoCanvas.value) {
   const height = pianoCanvas.value.height = parentHeight; // 设置 canvas 高度
   if(musicTrackLine&&parent){
     for (let i = 0; i <= (height/TRACK_HEIGHT); i++) {
-      const newTrack=new Track(i)
+      // const newTrack=new Track(i)
       const graphics=new Graphics()
       graphics
       .rect(0, 70 + (i - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
@@ -620,16 +646,15 @@ const clipTrackHandle=()=>{
     ClipInteraction.activeClip = null;
   }
 lastX = 0;
-lastY = 0;
   }
 
-function throttle(fn:Function, delay:number) {
+function throttle(fn, delay:number) {
 let lastCall = 0;
-return function (...args: any[]) {
+return function (...args) {
   const now = Date.now();
   if (now - lastCall >= delay) {
     lastCall = now;
-    (fn as any)(...args);
+    (fn)(...args);
   }
 };
 }
@@ -648,10 +673,10 @@ pianoCanvas.value.style.transform = `translateX(${positionState.translateX}px)`;
 },5),{passive:false})
 
 // 导出trackMap为JSON格式
-function exportTrackMapToJSON(): any {
-const tracks: any[] = [];
+function exportTrackMapToJSON() {
+const tracks:toExportTrackData[] = [];
 
-trackMap.forEach((track, trackId) => {
+trackMap.forEach((track) => {
   tracks.push({
     track_id: track.id,
     midiChannel: track.midiChannel,
@@ -727,16 +752,16 @@ const audioBuffer = await Tone.Offline(async () => {
       // 简化：按 rhythmId 处理（参考你的 play 函数）
       switch (clip.rhythmId) {
         case 'whole':
-          poly.triggerAttackRelease(notes as any, '1n', clip.startsecond)
+          poly.triggerAttackRelease(notes as Frequency, '1n', clip.startsecond)
           break
         case 'half':
-          poly.triggerAttackRelease(notes as any, '2n', clip.startsecond)
+          poly.triggerAttackRelease(notes as Frequency, '2n', clip.startsecond)
           break
         case 'quarter':
-          poly.triggerAttackRelease(notes as any, '4n', clip.startsecond)
+          poly.triggerAttackRelease(notes as Frequency, '4n', clip.startsecond)
           break
         default:
-          poly.triggerAttackRelease(notes as any, '4n', clip.startsecond)
+          poly.triggerAttackRelease(notes as Frequency, '4n', clip.startsecond)
       }
     })
   })
