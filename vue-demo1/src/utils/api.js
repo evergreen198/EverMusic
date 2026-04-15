@@ -1,34 +1,36 @@
+// // api.js
+// import axios from 'axios'
+
+// const baseURL = process.env.NODE_ENV === 'production'
+//   ? 'http://113.44.82.167:7220/api'  // 或使用域名
+//   : 'http://localhost:7220/api'
+
+// // 创建 axios 实例
+// const request = axios.create({
+//   baseURL, // 基础URL
+//   timeout: 1000000, // 请求超时时间
+//   headers: {
+//     'Content-Type': 'application/json'
+//   }
+// })
+
 // api.js
 import axios from 'axios'
 
-const baseURL = process.env.NODE_ENV === 'production'
-  ? 'http://113.44.82.167:7220/api'  // 或使用域名
-  : 'http://localhost:7220/api'
+// 修改为相对路径，让 Nginx 或同域处理
+const baseURL = '/api'
 
-// 创建 axios 实例
+// 或者统一使用后端地址，但在生产环境用 Nginx 代理
+const baseURL = '/api'  // 这样请求会发到 http://113.44.82.167/api
+
 const request = axios.create({
-  baseURL, // 基础URL
-  timeout: 1000000, // 请求超时时间
+  baseURL,
+  timeout: 1000000,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// 请求拦截器
-// request.interceptors.request.use(
-//   config => {
-//     // 在发送请求之前做些什么，比如添加 token
-//     const token = localStorage.getItem('token')
-//     if (token) {
-//       config.headers['Authorization'] = `Bearer ${token}`
-//     }
-//     return config
-//   },
-//   error => {
-//     return Promise.reject(error)
-//   }
-// )
-// 响应拦截器
 request.interceptors.response.use(
   response => {
     // 对响应数据做点什么
