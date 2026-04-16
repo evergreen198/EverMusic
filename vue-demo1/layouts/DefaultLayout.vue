@@ -898,9 +898,7 @@ const confirmJoinProject = async () => {
       projectId: pendingProjectId.value,
       user_id,
       role: "editor",
-      permissions: {"edit": true},
-      title: pendingProjectInfo.value.title,
-      duration_second: pendingProjectInfo.value.duration_second,
+      permissions: {"edit": true}
     });
 
     await loadProject(pendingProjectId.value);

@@ -183,7 +183,7 @@ app.post('/api/updateuser/:id', async (req, res) => {
              SET username = $1,
                  email = $2,
                  password_hash = $3,
-                 avatar_url = $4::jsonb,
+                 avatar_url = $4,
                  bio = $5
              WHERE id = $6
              RETURNING *`,
@@ -197,38 +197,30 @@ app.post('/api/updateuser/:id', async (req, res) => {
 })
 // ========== 项目相关 ==========
 // 查询当前登录用户的项目列表
+// 查询当前登录用户的项目列表 - 优化版
 app.get('/api/projects_list', async (req, res) => {
   const { userId } = req.query;
 
-  // 验证用户ID
   if (!userId) {
     return res.status(400).json({ error: '缺少用户ID参数' });
   }
 
   try {
+    // ✅ 方案1：单次查询，只从 projects 表获取（推荐）
     const result = await pool.query(`
-            SELECT
-                p.id,
-                p.title,
-                p.creator_id,
-                p.duration_second,
-                p.updated_at,
-                p.last_edited_by
-            FROM projects p
-            WHERE p.creator_id = $1
-            UNION
-            SELECT
-                p.id,
-                p.title,
-                p.creator_id,
-                p.duration_second,
-                p.updated_at,
-                p.last_edited_by
-            FROM projects p
-            JOIN project_collaborators pc ON p.id = pc.project_id
-            WHERE pc.user_id = $1
-            ORDER BY updated_at DESC
-        `, [userId]);
+      SELECT DISTINCT
+        p.id,
+        p.title,
+        p.creator_id,
+        p.duration_second,
+        p.updated_at,
+        p.last_edited_by
+      FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+      WHERE p.creator_id = $1 OR pc.user_id = $1
+      ORDER BY p.updated_at DESC
+    `, [userId]);
+
     res.json(result.rows);
   } catch (err) {
     console.error('查询项目列表失败:', err);
@@ -414,13 +406,13 @@ app.get('/api/project/invites/confirm', async (req, res) => {
 // 添加合作者
 app.post(`/api/project/invites/:id/collaborators`, async (req, res) => {
   const { id: projectId } = req.params;
-  const { user_id, role, permissions, title, duration_second } = req.body;
+  const { user_id, role, permissions, } = req.body;
   try {
     const result = await pool.query(
-      `INSERT INTO project_collaborators (project_id, user_id, role, permissions,title,duration_second,updated_at)
-             VALUES ($1, $2, $3, $4,$5,$6,CURRENT_TIMESTAMP)
+      `INSERT INTO project_collaborators (project_id, user_id, role, permissions,updated_at)
+             VALUES ($1, $2, $3, $4,CURRENT_TIMESTAMP)
              RETURNING *`,
-      [projectId, user_id, role, JSON.stringify(permissions), title, duration_second]
+      [projectId, user_id, role, JSON.stringify(permissions), ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
