@@ -123,7 +123,6 @@ aside{
   max-height: 100vh;
   margin-left:0px ;
   background-color:#0e0e0e;
-  border-right: solid #ccc 1.5px ;
   position: relative;
   transform: scale(1);
   transform-origin: top left;

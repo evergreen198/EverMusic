@@ -9,11 +9,9 @@
           </div>
           <div class="modal-body">
             <button class="modal-option-btn" @click="handleViewHistory">
-              <span class="btn-icon">📁</span>
               <span class="btn-text">查看历史作品</span>
             </button>
             <button class="modal-option-btn" @click="handleJoinCollaboration">
-              <span class="btn-icon">🤝</span>
               <span class="btn-text">加入协作</span>
             </button>
             <button class="modal-option-btn" @click="handleImportMidi">
@@ -115,7 +113,6 @@
                   @change="handleFileSelect"
                   style="display: none;"
                 />
-                <div class="upload-icon">📁</div>
                 <p class="upload-text">点击或拖拽MIDI文件到此处</p>
                 <p class="upload-hint">支持 .mid 和 .midi 格式文件</p>
               </div>
@@ -129,7 +126,6 @@
               @click="confirmImportMidi"
               :disabled="!selectedMidiFile"
             >
-              <span class="btn-icon">📥</span>
               <span class="btn-text">确认导入</span>
             </button>
           </div>
@@ -145,11 +141,9 @@
           </div>
           <div class="modal-body">
             <button class="modal-option-btn" @click="handleExportWav">
-              <span class="btn-icon">🔊</span>
               <span class="btn-text">导出为WAV文件</span>
             </button>
             <button class="modal-option-btn" @click="handleExportMidi">
-              <span class="btn-icon">🎵</span>
               <span class="btn-text">导出为MIDI文件</span>
             </button>
           </div>
@@ -172,7 +166,6 @@
               <p class="invite-tip">分享此邀请码给其他用户，邀请他们协作编辑此项目</p>
             </div>
             <button class="modal-action-btn" @click="copyInviteCode">
-              <span class="btn-icon">📋</span>
               <span class="btn-text">复制邀请码</span>
             </button>
           </div>
@@ -278,7 +271,7 @@
         <footer class="function">
           <div class="function-action">
             <h3 class="function-play" @click="playBtn">播放</h3>
-            <h3 class="function-pause">暂停</h3>
+            <!-- <h3 class="function-pause">暂停</h3> -->
             <h3 class="function-bpm">速度</h3>
             <BpmSlider style="display: inline-block;"
             :projectId="currentProjectId as number"
@@ -1504,6 +1497,7 @@ display: flex;
 
 .function-action h3{
   display: inline-block;
+  padding-right: 15px;
 }
 
 .function-react{
@@ -1591,7 +1585,7 @@ height: auto;
 }
 .material-item:hover{
   cursor: pointer;
-  background-color: #414141;
+  background-color: #212121;
 }
 .material-item i{
   font-family: 'icomoon';
@@ -1637,7 +1631,7 @@ i::before{
     height: 100px; /* 固定高度 */
   min-height: 100px; /* 确保最小高度 */
   max-height: 100px; /* 确保最大高度 */
-  background-color:#11212D;
+  background-color:#0e0e0e;
 }
 
 .main{
@@ -1658,7 +1652,7 @@ i::before{
   position: relative; /* 确保定位稳定 */
   transform: scale(1); /* 防止缩放 */
   transform-origin: top left; /* 缩放原点 */
-  background-color: #11212D;
+  background-color: #202020;
   padding: 25px 15px 0 15px;
   width: 100%; /* 确保宽度充满 */
   font-size: 20px;
@@ -1751,9 +1745,9 @@ i::before{
   -moz-appearance: none;
   padding: 0.8vh 2.5vh 0.8vh 1vh;
   font-size: 1.3vh;
-  border: 1px solid #2a4a5c;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  background-color: #253745;
+  background-color: #212121;
   color: #ffffff;
   cursor: pointer;
   outline: none;
@@ -1762,7 +1756,6 @@ i::before{
 }
 
 .custom-select select:hover{
-  background-color: #2a4a5c;
   border-color: #9fb2c1;
 }
 

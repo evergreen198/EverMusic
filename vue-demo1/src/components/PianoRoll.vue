@@ -450,10 +450,9 @@ if( pianoCanvas.value) {
       const graphics=new Graphics()
       graphics
       .rect(0, 70 + (i - 1) * TRACK_HEIGHT, 9000, TRACK_HEIGHT)
-      .fill({ color:0x4a5c6a }) // Fill with red
+      .fill({ color:0x253745}) 
       .stroke({ width: 1, color: 0x5a6c7a });
       pixiApp.stage.addChild(graphics)
-      // trackArray.push(newTrack)
     }
     pixiApp.stage.addChild(musicTrackLine,musicTrack)
   }
@@ -462,11 +461,10 @@ if( pianoCanvas.value) {
   const timeColumn=new Graphics()
   const timeColumnx=new Graphics()
   const ruler=new Container()
-  // const fontStyle = { fontName: 'Arial', fontSize: 16, tint: 0xffffff };
   if(timeTrack&&parent){
     timeTrack
       .rect(0,0,width,TRACK_TOP)
-      .fill({color:0x253745})
+      .fill({color:0x4a5c6a})
       for (let i = 0; i <= width; i += 30){
         timeColumn
           .moveTo(i,0)
@@ -487,7 +485,8 @@ if( pianoCanvas.value) {
           style:{
             fontFamily:'myfont',
             fontSize:8,
-            fill:0xcccccc,
+            fill:'#cccccc',
+            // fill:0xcccccc,
             align:'center'
           }
         })
@@ -532,26 +531,7 @@ if( pianoCanvas.value) {
       trackId,
       clip: newClip
     }, false);
-    // if(props.isMultiUser){
-    //   //多人项目
-    //   socket.emit('clip-added', {
-    //     projectId: getCurrentProjectId(),
-    //     clip: {
-    //       track_id: trackId,
-    //       clip_id: newClip.clipId,
-    //       content: newClip.content,
-    //       startsecond: newClip.startsecond,
-    //       durationsecond: newClip.durationsecond,
-    //       instrumentId: newClip.instrumentId,
-    //       rhythmId: newClip.rhythmId,
-    //       isChord: newClip.isChord,
-    //       notes: newClip.notes,
-    //       itemWidth: newClip.itemWidth,
-    //       itemHeight: newClip.itemHeight
-    //     }
-    //   })
 
-    // }
   });
 
   //拉伸，移动
