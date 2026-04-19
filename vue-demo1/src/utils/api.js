@@ -1,18 +1,4 @@
-// // api.js
-// import axios from 'axios'
 
-// const baseURL = process.env.NODE_ENV === 'production'
-//   ? 'http://113.44.82.167:7220/api'  // 或使用域名
-//   : 'http://localhost:7220/api'
-
-// // 创建 axios 实例
-// const request = axios.create({
-//   baseURL, // 基础URL
-//   timeout: 1000000, // 请求超时时间
-//   headers: {
-//     'Content-Type': 'application/json'
-//   }
-// })
 
 // api.js
 import axios from 'axios'
