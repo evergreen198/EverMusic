@@ -13,7 +13,8 @@ const corsOptions = {
     'http://127.0.0.1:5173',
     'http://113.44.82.167',
     'http://113.44.82.167:80',
-    'http://113.44.82.167:7220'
+    'http://113.44.82.167:7220',
+    'http://113.44.82.167:7221'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -511,8 +512,7 @@ io.on('connection', (socket) => {
 
 
 // 启动服务
-const PORT = 7220;
+const PORT = 7221;
 httpServer.listen(PORT, () => {
-  // console.log(`API服务器运行在 http://localhost:${PORT}`);
   console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });
