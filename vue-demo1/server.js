@@ -6,21 +6,19 @@ import { Server } from 'socket.io'
 // Please install OpenAI SDK first: `npm install openai`
 const app = express();
 
-// ✅ 配置 CORS
+//  配置 CORS
 const corsOptions = {
   origin: [
-    'http://localhost:5173',           // 本地开发
-    'http://127.0.0.1:5173',           // 本地开发
-    'http://113.44.82.167',            // 生产环境（无端口）
-    'http://113.44.82.167:80',         // 生产环境（HTTP）
-    'http://113.44.82.167:7220'        // 生产环境（直接访问后端）
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://113.44.82.167',
+    'http://113.44.82.167:80',
+    'http://113.44.82.167:7220'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
+  credentials: true
 };
-
 app.use(cors(corsOptions));
 app.use(express.json());
 
