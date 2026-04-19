@@ -513,6 +513,6 @@ io.on('connection', (socket) => {
 
 // 启动服务
 const PORT = 7221;
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT,'0.0.0.0',() => {
   console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });
