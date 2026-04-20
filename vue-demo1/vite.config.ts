@@ -32,11 +32,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:7220',
         changeOrigin: true
-      },
-      '/socket.io': {
-        target: 'http://localhost:7220',
-        changeOrigin: true,
-        ws: true
       }
     }
   },

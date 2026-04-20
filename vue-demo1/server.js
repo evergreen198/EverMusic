@@ -514,8 +514,5 @@ io.on('connection', (socket) => {
 // 启动服务
 const PORT = process.env.PORT || 7221;
 httpServer.listen(PORT,'0.0.0.0',() => {
-  console.log(`✅ REST API 和 Socket.IO 都已启动，监听端口: ${PORT}`);
-  console.log(`✅ 服务地址: http://0.0.0.0:${PORT}`);
-  console.log(`✅ API 地址: http://0.0.0.0:${PORT}/api`);
-  console.log(`✅ Socket.IO 地址: http://0.0.0.0:${PORT}/socket.io`);
+  console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });
