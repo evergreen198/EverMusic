@@ -4,7 +4,8 @@ import { io } from 'socket.io-client';
 
 
 
-const socket = io('http://113.44.82.167:7221', {
+// 使用相对路径，让Vite代理处理跨域
+const socket = io('/', {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionAttempts: 5
