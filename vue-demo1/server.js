@@ -3,19 +3,30 @@ import pool from './db.js';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io'
+import dotenv from 'dotenv';
+dotenv.config();
 // Please install OpenAI SDK first: `npm install openai`
 const app = express();
 
 //  配置 CORS
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://113.44.82.167',
+  'http://113.44.82.167:80',
+  'http://113.44.82.167:7220',
+  'http://113.44.82.167:7221',
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim()) : [])
+];
+
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://113.44.82.167',
-    'http://113.44.82.167:80',
-    'http://113.44.82.167:7220',
-    'http://113.44.82.167:7221'
-  ],
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`CORS blocked origin: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -31,8 +42,6 @@ export const io = new Server(httpServer, {
 });
 //AI接口
 import OpenAI from "openai";
-import dotenv from 'dotenv';
-dotenv.config();
 const openai = new OpenAI({
   baseURL: 'https://api.deepseek.com',
   apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
@@ -512,7 +521,7 @@ io.on('connection', (socket) => {
 
 
 // 启动服务
-const PORT = process.env.PORT || 7221;
+const PORT = process.env.PORT || 7220;
 httpServer.listen(PORT,'0.0.0.0',() => {
   console.log(`✅ REST API 和 Socket.IO 都已启动`);
 });

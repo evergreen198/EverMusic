@@ -1,11 +1,6 @@
-
-
-// api.js
 import axios from 'axios'
 
-// 修改为相对路径，让 Nginx 或同域处理
-const baseURL = '/api'
-
+const baseURL = import.meta.env.VITE_API_URL || '/api'
 
 const request = axios.create({
   baseURL,
@@ -16,27 +11,12 @@ const request = axios.create({
 })
 
 request.interceptors.response.use(
-  response => {
-    // 对响应数据做点什么
-    const res = response.data
-    // 根据业务状态码处理 - 2xx 状态码都表示成功
-    if (response.status < 200 || response.status >= 300) {
-      // 处理错误
-      return Promise.reject(new Error(res.message || 'Error'))
-    }
-    return res
-  },
-  error => {
-    // 对响应错误做点什么
-    return Promise.reject(error)
-  }
+  response => response.data,
+  error => Promise.reject(error)
 )
 
 export default request
 
-
-// api/modules/user.js
-//
 export function register(data) {
   return request.post('/register', data)
 }
@@ -45,52 +25,42 @@ export function login(data) {
   return request.post('/login', data)
 }
 
-export function updateUser(id,data) {
-  return request.post(`/updateuser/${id}`, {data})
+export function updateUser(id, data) {
+  return request.post(`/updateuser/${id}`, { data })
 }
 
-// 项目相关 API
-//创建项目√
 export function createProject(data) {
   return request.post('/projects', data)
 }
 
-// 更新项目√
 export function updateProject(id, data) {
   return request.put(`/projects/${id}`, data)
 }
-// 项目所有详情√
+
 export function getProject(id) {
   return request.get(`/projects_data/${id}`)
 }
 
-// 查询项目列表√
 export function getProjectList(userId) {
   return request.get(`/projects_list?userId=${userId}`)
 }
 
-// 邀请项目合作者√
 export function sendInvitaion(data) {
   return request.post(`/project/invites/${data.projectId}`, data)
 }
 
-//确认项目可加入√
 export function confirmInvitation(data) {
   return request.get(`/project/invites/confirm?inviteCode=${data.inviteCode}`)
 }
 
-
-//将合作者信息加入项目
 export function addCollaborator(data) {
   return request.post(`/project/invites/${data.projectId}/collaborators`, data)
 }
 
-//TODO：将合作者计入邀请次数
 export function countInvitation(data) {
   return request.post(`/project/invites/${data.projectId}/count`, data)
 }
 
-// src/utils/api.js
 export function generateMusic(style) {
-  return request.post('/generate-music', { style });
+  return request.post('/generate-music', { style })
 }
